@@ -1,8 +1,10 @@
 import json
 import os
 import pika
+import requests
 import time
 import unittest
+import urllib.parse
 import uuid
 
 from tornado import gen, testing, web, ioloop, httpclient
@@ -32,7 +34,8 @@ class TestConsumer(object):
         """
         self.queue_name = 'test_{0}'.format(str(uuid.uuid4()))
         url = os.environ['AMQP']
-        self.connection = pika.BlockingConnection(pika.URLParameters(url))
+        self.params = pika.URLParameters(url)
+        self.connection = pika.BlockingConnection(self.params)
         self.channel = self.connection.channel()
         self.channel.queue_declare(
             queue=self.queue_name, auto_delete=True, exclusive=True)
@@ -66,7 +69,7 @@ class TestConsumer(object):
                 return body
 
 
-class AsyncTestHandler(amqp.RabbitMQRequestMixin,
+class AsyncTestHandler(amqp.AMQPMixin,
                        web.RequestHandler):
 
     def initialize(self):
@@ -97,7 +100,8 @@ class _BaseTestPublishing(testing.AsyncHTTPTestCase):
         self.consumer = TestConsumer(ROUTING_KEY, EXCHANGE)
 
     def get_new_ioloop(self):
-        return ioloop.IOLoop.instance()
+        loop = ioloop.IOLoop.instance()
+        return loop
 
     def get_app(self):
         return web.Application([web.url(r'/(?P<message>[\-\w]{32,36})',
@@ -110,11 +114,11 @@ class _BaseTestPublishing(testing.AsyncHTTPTestCase):
     def test_establish_rabbit_connection(self):
         self.assertEqual(self.received, self.msg_id)
 
-    def test_rabbit_conn_connected(self):
-        self.assertIsNotNone(amqp.CONNECTION)
+    def test_rabbit_connection_not_none(self):
+        self.assertIsNotNone(amqp.AMQPMixin.connection)
 
-    def test_rabbit_channel_connected(self):
-        self.assertIsNotNone(amqp.CHANNEL)
+    def test_rabbit_channel_not_none(self):
+        self.assertIsNotNone(amqp.AMQPMixin.channel)
 
 
 class AsyncAMQPTest(_BaseTestPublishing):
@@ -136,7 +140,21 @@ class AsyncAMQPTestLostConnection(_BaseTestPublishing):
         self.trigger_worker_to_publish()
         self.received = self.consumer.get_message().decode('utf-8')
 
-        amqp.CONNECTION = None
-        amqp.CHANNEL = None
+        amqp.AMQPMixin.channel = None
+        amqp.AMQPMixin.connection = None
+        self.trigger_worker_to_publish()
+        self.received = self.consumer.get_message().decode('utf-8')
+
+
+class AsyncAMQPTestLostChannel(_BaseTestPublishing):
+
+    msg_id = str(uuid.uuid4())
+
+    def setUp(self):
+        super(AsyncAMQPTestLostChannel, self).setUp()
+        self.trigger_worker_to_publish()
+        self.received = self.consumer.get_message().decode('utf-8')
+
+        amqp.AMQPMixin.channel = None
         self.trigger_worker_to_publish()
         self.received = self.consumer.get_message().decode('utf-8')

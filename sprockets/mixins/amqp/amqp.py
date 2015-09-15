@@ -1,32 +1,27 @@
-"""The RabbitMQRequestMixin wraps RabbitMQ use into a request handler, with
+"""The AMQPMixin wraps RabbitMQ use into a request handler, with
 methods to speed the development of publishing RabbitMQ messages.
 
-Example configuration:
-
-    Application:
-      rabbitmq:
-        host: rabbitmq1
-        virtual_host: my_web_app
-        username: tinman
-        password: tornado
-
 """
-import os
-from tornado import gen, locks
+from datetime import timedelta
+from pika.adapters.tornado_connection import TornadoConnection
 import logging
+import os
 import pika
-from pika.adapters import tornado_connection
-from tornado import web
+
+from tornado import gen, locks, web, ioloop
 
 LOGGER = logging.getLogger(__name__)
 
-# a datetime.timedelta relative to the current time
-CHANNEL = None
-CONNECTION = None
-WAIT_TIMEOUT = os.environ.get('WAIT_TIMEOUT')
+WAIT_SECONDS = os.environ.get('WAIT_SECONDS', 1)
+WAIT_TIMEOUT = timedelta(seconds=int(WAIT_SECONDS))
+AMQP_STATES = {
+    'connected': 'CONNECTED',
+    'connecting': 'CONNECTING',
+    'disconnected': 'DISCONNECTED',
+}
 
 
-class RabbitMQRequestMixin(web.RequestHandler):
+class AMQPMixin(web.RequestHandler):
     """The request handler will connect to RabbitMQ on the first request,
     blocking until the connection and channel are established. If RabbitMQ
     closes it's connection to the app at any point, a connection attempt will
@@ -38,17 +33,22 @@ class RabbitMQRequestMixin(web.RequestHandler):
     https://github.com/gmr/tinman/blob/master/tinman/handlers/rabbitmq.py
 
     """
-
-    def initialize(self):
-        super(RabbitMQRequestMixin, self).initialize()
-        self.amqp_conn_condition = locks.Condition()
-        self.amqp_channel_condition = locks.Condition()
+    amqp_ready = locks.Event()
+    amqp_state = AMQP_STATES['disconnected']
+    channel = None
+    connection = None
 
     def _connect_to_rabbitmq(self):
         """Connect to RabbitMQ and assign a class attribute"""
-        global CONNECTION
         LOGGER.info('Creating a new RabbitMQ connection')
-        CONNECTION = self._new_rabbitmq_connection()
+        custom_ioloop = ioloop.IOLoop.current()
+        AMQPMixin.connection = TornadoConnection(self._rabbit_params,
+                                                 self.on_conn_open,
+                                                 custom_ioloop=custom_ioloop)
+
+    def _create_new_channel(self):
+        """Open a channel on the class connection"""
+        AMQPMixin.connection.channel(on_open_callback=self.on_channel_open)
 
     def _new_message_properties(self, content_type=None, content_encoding=None,
                                 headers=None, delivery_mode=None,
@@ -79,16 +79,6 @@ class RabbitMQRequestMixin(web.RequestHandler):
                                     reply_to, expiration, message_id,
                                     timestamp, message_type, user_id, app_id)
 
-    def _new_rabbitmq_connection(self):
-        """Return a connection to RabbitMQ via the pika.Connection object.
-        When RabbitMQ is connected, on_rabbitmq_open will be called.
-
-        :rtype: pika.adapters.tornado_connection.TornadoConnection
-
-        """
-        return tornado_connection.TornadoConnection(self._rabbitmq_parameters,
-                                                    self.on_conn_open)
-
     def _publish_message(self, exchange, routing_key, message, properties):
         """Publish the message to RabbitMQ
 
@@ -98,26 +88,17 @@ class RabbitMQRequestMixin(web.RequestHandler):
         :param pika.BasicProperties: The message properties
 
         """
-        global CHANNEL
         LOGGER.debug('Publishing message: %s to exchange: %s with '
                      'routing_key: %s and properties: %s',
                      message, exchange, routing_key, properties)
-        if self._rabbitmq_is_closed or not CHANNEL:
+        if not self.connection or not self.channel:
             LOGGER.error('Unable to connect to Rabbit')
-            return
-        CHANNEL.basic_publish(exchange, routing_key, message, properties)
+            raise pika.exceptions.AMQPError()
+        AMQPMixin.channel.basic_publish(exchange, routing_key, message,
+                                        properties)
 
     @property
-    def _rabbitmq_is_closed(self):
-        """Returns True if the pika connection to RabbitMQ is closed.
-
-        :rtype: bool
-
-        """
-        return not CONNECTION
-
-    @property
-    def _rabbitmq_parameters(self):
+    def _rabbit_params(self):
         """Return a pika URLParameters object using the :envvar:`AMQP`
         environment variable which identifies the Rabbit MQ server as a URL
         ready for :class:`pika.connection.URLParameters`.
@@ -125,7 +106,8 @@ class RabbitMQRequestMixin(web.RequestHandler):
         :rtype: pika.URLParameters
 
         """
-        LOGGER.info('URLParameters: %s', pika.URLParameters(os.environ['AMQP']))
+        LOGGER.debug('URLParameters: %s',
+                     pika.URLParameters(os.environ['AMQP']))
         return pika.URLParameters(os.environ['AMQP'])
 
     def on_conn_close(self, reply_code, reply_text):
@@ -135,11 +117,11 @@ class RabbitMQRequestMixin(web.RequestHandler):
         :param str reply_text: The disconnect reason
 
         """
-        global CONNECTION, CHANNEL
         LOGGER.warning('RabbitMQ has disconnected (%s): %s',
                        reply_code, reply_text)
-        CONNECTION = None
-        CHANNEL = None
+        AMQPMixin.connection = None
+        self.amqp_ready.clear()
+        AMQPMixin.amqp_state = AMQP_STATES['disconnected']
         self._connect_to_rabbitmq()
 
     @gen.coroutine
@@ -149,15 +131,10 @@ class RabbitMQRequestMixin(web.RequestHandler):
         :param pika.connection.Connection connection: The pika connection
 
         """
-        global CONNECTION, CHANNEL
-        LOGGER.info('RabbitMQ is attempting to connect')
-        CONNECTION = connection
-        CONNECTION.channel(on_open_callback=self.on_channel_open)
-        # wait for channel
-        yield self.amqp_channel_condition.wait(timeout=WAIT_TIMEOUT)
-        CHANNEL.add_on_close_callback(self.on_channel_close)
-        CONNECTION.add_on_close_callback(self.on_conn_close)
-        self.amqp_conn_condition.notify()
+        LOGGER.info('RabbitMQ has created a connection')
+        AMQPMixin.connection = connection
+        AMQPMixin.connection.add_on_close_callback(self.on_conn_close)
+        self._create_new_channel()
         LOGGER.info('RabbitMQ has connected')
 
     def on_channel_open(self, channel):
@@ -166,11 +143,12 @@ class RabbitMQRequestMixin(web.RequestHandler):
         :param pika.channel.Channel channel: The channel opened with RabbitMQ
 
         """
-        global CHANNEL
         LOGGER.info('Channel %i is opened for communication with RabbitMQ',
                     channel.channel_number)
-        CHANNEL = channel
-        self.amqp_channel_condition.notify()
+        self.amqp_ready.set()
+        AMQPMixin.channel = channel
+        AMQPMixin.amqp_state = AMQP_STATES['connected']
+        AMQPMixin.channel.add_on_close_callback(self.on_channel_close)
 
     def on_channel_close(self, channel):
         """Called when the RabbitMQ accepts the channel close request.
@@ -178,26 +156,44 @@ class RabbitMQRequestMixin(web.RequestHandler):
         :param pika.channel.Channel channel: The channel closed with RabbitMQ
 
         """
-        global CHANNEL
         LOGGER.info('Channel %i is closed for communication with RabbitMQ',
                     channel.channel_number)
-        CHANNEL = channel
+        AMQPMixin.channel = None
+        AMQPMixin.amqp_state = AMQP_STATES['disconnected']
+        self._create_new_channel()
 
     @gen.coroutine
     def prepare(self):
         """Prepare the handler, ensuring RabbitMQ is connected or start a new
         connection attempt.
 
-        Wait for the connection condition to notify that the rabbit connection
-        has been established.
+        If a new connection needs ot be created, this will wait until the
+        connection is established.
 
-        This will timeout
+        Waiting for a new connection will timeout in WAIT_SECONDS and return a
+        504.
 
         """
-        maybe_future = super(RabbitMQRequestMixin, self).prepare()
+        maybe_future = super(AMQPMixin, self).prepare()
         if maybe_future:
             yield maybe_future
 
-        if self._rabbitmq_is_closed:
-            self._connect_to_rabbitmq()
-            yield self.amqp_conn_condition.wait(timeout=WAIT_TIMEOUT)
+        if self._finished:
+            return
+
+        if not self.connection and self.amqp_state != AMQP_STATES['connecting']:
+            AMQPMixin.amqp_state = AMQP_STATES['connecting']
+            self.amqp_ready.clear()
+            try:
+                self._connect_to_rabbitmq()
+                yield self.amqp_ready.wait(timeout=WAIT_TIMEOUT)
+            except gen.TimeoutError as e:
+                self.set_status(504)
+                self.finish('RabbitMQ connection timed out')
+                return
+
+        if not self.channel and self.amqp_state != AMQP_STATES['connecting']:
+            AMQPMixin.amqp_state = AMQP_STATES['connecting']
+            self.amqp_ready.clear()
+            self._create_new_channel()
+            yield self.amqp_ready.wait(timeout=WAIT_TIMEOUT)
