@@ -4,7 +4,6 @@ import pika
 import requests
 import time
 import unittest
-import urllib.parse
 import uuid
 
 from tornado import gen, testing, web, ioloop, httpclient
