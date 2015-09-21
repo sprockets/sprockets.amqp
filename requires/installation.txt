@@ -1,4 +1,4 @@
-pika>=0.9.14,<1.0
+pika>=0.10.0
 setupext-gitversion>=1.1.0,<2.0.0
 sprockets.http>=0.2.2
 sprockets.logging>=1.1.0,<2.0.0
