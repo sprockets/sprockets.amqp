@@ -21,7 +21,7 @@ AMQP_STATES = {
 }
 
 
-class AMQPMixin(web.RequestHandler):
+class AMQPMixin(object):
     """The request handler will connect to RabbitMQ on the first request,
     blocking until the connection and channel are established. If RabbitMQ
     closes it's connection to the app at any point, a connection attempt will
