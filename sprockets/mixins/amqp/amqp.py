@@ -106,9 +106,11 @@ class AMQPMixin(web.RequestHandler):
         :rtype: pika.URLParameters
 
         """
-        LOGGER.debug('URLParameters: %s',
-                     pika.URLParameters(os.environ['AMQP']))
-        return pika.URLParameters(os.environ['AMQP'])
+        amqp_url = os.environ.get('AMQP',
+                                  'amqp://guest:guest@localhost:5672/%2f')
+        params = pika.URLParameters(amqp_url)
+        LOGGER.debug('RabbitMQ connection params: %r', params)
+        return params
 
     def on_conn_close(self, reply_code, reply_text):
         """Called when RabbitMQ has been connected to.

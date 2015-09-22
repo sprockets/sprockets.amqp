@@ -16,19 +16,15 @@ except IOError:
 
 setup(
     name='sprockets.mixins.amqp',
-    description='Mixin for publishing events to RabbitMQ',
     version=version,
-    packages=find_packages(),
-    namespace_packages=['sprockets', 'sprockets.mixins'],
-    test_suite='nose.collector',
+    description='Mixin for publishing events to RabbitMQ',
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
-    install_requires=open('requires/installation.txt').read(),
+    url='https://github.com/sprockets/sprockets.mixins.amqp.git',
     author='AWeber Communications, Inc.',
     author_email='api@aweber.com',
-    license=codecs.open('LICENSE', encoding='utf-8').read(),
-    url='https://github.com/sprockets/sprockets.mixins.amqp.git',
+    license='BSD',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
@@ -39,11 +35,11 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    namespace_packages=['sprockets'],
-    py_modules=['sprockets.amqp'],
-    install_requires=install_requires,
-    setup_requires=setup_requires,
-    tests_require=tests_require,
-    test_suite='nose.collector',
-    zip_safe=True)
+    packages=find_packages(),
+    namespace_packages=['sprockets', 'sprockets.mixins'],
+    install_requires=open('requires/installation.txt').read(),
+    zip_safe=True,
+)
