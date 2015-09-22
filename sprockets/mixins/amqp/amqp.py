@@ -152,7 +152,7 @@ class AMQPMixin(object):
         AMQPMixin.amqp_state = AMQP_STATES['connected']
         AMQPMixin.channel.add_on_close_callback(self.on_channel_close)
 
-    def on_channel_close(self, channel):
+    def on_channel_close(self, channel, reply_code, reply_text):
         """Called when the RabbitMQ accepts the channel close request.
 
         :param pika.channel.Channel channel: The channel closed with RabbitMQ
