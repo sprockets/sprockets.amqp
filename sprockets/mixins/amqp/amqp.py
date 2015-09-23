@@ -27,7 +27,7 @@ class AMQPMixin(object):
     closes it's connection to the app at any point, a connection attempt will
     be made on the next request.
 
-    Expects the :envvar:`AMQP` environment variable to construct
+    Expects the :envvar:`AMQP_URL` environment variable to construct
     :class:`pika.connection.URLParameters`.
 
     https://github.com/gmr/tinman/blob/master/tinman/handlers/rabbitmq.py
@@ -99,14 +99,14 @@ class AMQPMixin(object):
 
     @property
     def _rabbit_params(self):
-        """Return a pika URLParameters object using the :envvar:`AMQP`
+        """Return a pika URLParameters object using the :envvar:`AMQP_URL`
         environment variable which identifies the Rabbit MQ server as a URL
         ready for :class:`pika.connection.URLParameters`.
 
         :rtype: pika.URLParameters
 
         """
-        amqp_url = os.environ.get('AMQP',
+        amqp_url = os.environ.get('AMQP_URL',
                                   'amqp://guest:guest@localhost:5672/%2f')
         params = pika.URLParameters(amqp_url)
         LOGGER.debug('RabbitMQ connection params: %r', params)
@@ -124,7 +124,6 @@ class AMQPMixin(object):
         AMQPMixin.connection = None
         self.amqp_ready.clear()
         AMQPMixin.amqp_state = AMQP_STATES['disconnected']
-        self._connect_to_rabbitmq()
 
     @gen.coroutine
     def on_conn_open(self, connection):
@@ -161,7 +160,6 @@ class AMQPMixin(object):
         LOGGER.info('Channel %i is closed for communication with RabbitMQ',
                     channel.channel_number)
         AMQPMixin.channel = None
-        AMQPMixin.amqp_state = AMQP_STATES['disconnected']
         self._create_new_channel()
 
     @gen.coroutine
@@ -198,4 +196,7 @@ class AMQPMixin(object):
             AMQPMixin.amqp_state = AMQP_STATES['connecting']
             self.amqp_ready.clear()
             self._create_new_channel()
+            yield self.amqp_ready.wait(timeout=WAIT_TIMEOUT)
+
+        if self.amqp_state == AMQP_STATES['connecting']:
             yield self.amqp_ready.wait(timeout=WAIT_TIMEOUT)

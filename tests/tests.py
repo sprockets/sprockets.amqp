@@ -13,7 +13,7 @@ from sprockets.mixins.amqp import amqp
 
 ROUTING_KEY = 'test_mixins_amqp'
 EXCHANGE = 'amqp_mixin'
-os.environ.setdefault('AMQP', 'amqp://guest:guest@localhost/%2F')
+os.environ.setdefault('AMQP_URL', 'amqp://guest:guest@localhost/%2F')
 HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -32,7 +32,7 @@ class TestConsumer(object):
 
         """
         self.queue_name = 'test_{0}'.format(str(uuid.uuid4()))
-        url = os.environ['AMQP']
+        url = os.environ['AMQP_URL']
         self.params = pika.URLParameters(url)
         self.connection = pika.BlockingConnection(self.params)
         self.channel = self.connection.channel()
