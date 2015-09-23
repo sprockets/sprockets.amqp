@@ -112,7 +112,7 @@ class AMQPMixin(object):
         LOGGER.debug('RabbitMQ connection params: %r', params)
         return params
 
-    def on_conn_close(self, reply_code, reply_text):
+    def on_conn_close(self, connection, reply_code, reply_text):
         """Called when RabbitMQ has been connected to.
 
         :param int reply_code: The code for the disconnect
