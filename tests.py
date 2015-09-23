@@ -38,7 +38,8 @@ class BaseTestCase(testing.AsyncTestCase):
         LOGGER.info('Exchange %s declared, declaring queue %s', self.exchange,
                     self.queue)
         self.amqp.channel.queue_declare(self.on_queue_declare_ok,
-                                        queue=self.queue)
+                                        queue=self.queue,
+                                        auto_delete=True)
 
     def on_queue_declare_ok(self, _method):
         LOGGER.info('Queue %s declared', self.queue)
