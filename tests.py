@@ -35,23 +35,20 @@ class BaseTestCase(testing.AsyncTestCase):
                                            auto_delete=True)
 
     def on_exchange_declare_ok(self, _method):
-        LOGGER.info('Exchange %s declared, declaring queue %s',
-                    self.exchange, self.queue)
+        LOGGER.info('Exchange %s declared, declaring queue %s', self.exchange,
+                    self.queue)
         self.amqp.channel.queue_declare(self.on_queue_declare_ok,
                                         queue=self.queue)
 
     def on_queue_declare_ok(self, _method):
         LOGGER.info('Queue %s declared', self.queue)
-        self.amqp.channel.queue_bind(self.on_bind_ok,
-                                     self.queue,
-                                     self.exchange,
+        self.amqp.channel.queue_bind(self.on_bind_ok, self.queue, self.exchange,
                                      self.routing_key)
 
     def on_bind_ok(self, _method):
         LOGGER.info('Queue %s bound to %s', self.queue, self.exchange)
         self.amqp.channel.add_callback(self.on_get_response,
-                                       [spec.Basic.GetEmpty],
-                                       False)
+                                       [spec.Basic.GetEmpty], False)
         self.ready.set()
 
     def on_get_response(self, channel, method, properties=None, body=None):

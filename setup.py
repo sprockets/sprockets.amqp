@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-import codecs
 import setuptools
 
 setuptools.setup(
@@ -7,15 +5,13 @@ setuptools.setup(
     version='0.1.0',
     description='Mixin for publishing events to RabbitMQ',
     long_description=open('README.rst').read(),
-    url='https://github.com/sprockets/sprockets.mixins.amqp.git',
+    url='https://github.com/sprockets/sprockets.mixins.amqp',
     author='AWeber Communications, Inc.',
     author_email='api@aweber.com',
     license='BSD',
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
-        'Natural Language :: English',
+        'Development Status :: 3 - Alpha', 'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License', 'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
@@ -30,5 +26,4 @@ setuptools.setup(
     py_modules=['sprockets.mixins.amqp'],
     namespace_packages=['sprockets', 'sprockets.mixins'],
     install_requires=open('requires/installation.txt').read(),
-    zip_safe=True,
-)
+    zip_safe=True)
