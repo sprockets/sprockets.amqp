@@ -2,30 +2,29 @@
 import codecs
 import sys
 
-import setuptools
+from setuptools import find_packages, setup
 
-import sprockets.amqp
+from sprockets.mixins import amqp
 
+version = amqp.__version__
+try:
+    with open('LOCAL-VERSION') as f:
+        local_version = f.readline().strip()
+        version = version + local_version
+except IOError:
+    pass
 
-install_requires = []
-setup_requires = []
-tests_require = ['nose>=1.3,<2', 'tornado>3,<5']
-
-if sys.version_info < (3, 0):
-    tests_require.append('mock')
-
-setuptools.setup(
-    name='sprockets.amqp',
-    version=sprockets.amqp.__version__,
-    description='Making logs nicer since 2015!',
+setup(
+    name='sprockets.mixins.amqp',
+    version=version,
+    description='Mixin for publishing events to RabbitMQ',
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
-    url='https://github.com/sprockets/sprockets.amqp.git',
-    author='Dave Shawley',
-    author_email='daves@aweber.com',
+    url='https://github.com/sprockets/sprockets.mixins.amqp.git',
+    author='AWeber Communications, Inc.',
+    author_email='api@aweber.com',
     license='BSD',
-    extras_require={'tornado': ['tornado>3,<5']},
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
@@ -39,10 +38,8 @@ setuptools.setup(
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    namespace_packages=['sprockets'],
-    py_modules=['sprockets.amqp'],
-    install_requires=install_requires,
-    setup_requires=setup_requires,
-    tests_require=tests_require,
-    test_suite='nose.collector',
-    zip_safe=True)
+    packages=find_packages(),
+    namespace_packages=['sprockets', 'sprockets.mixins'],
+    install_requires=open('requires/installation.txt').read(),
+    zip_safe=True,
+)

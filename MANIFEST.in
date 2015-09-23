@@ -4,5 +4,6 @@ include HISTORY.rst
 include tests.py
 graft docs
 graft examples
+graft requires
 global-exclude __pycache__
 global-exclude *.pyc

@@ -20,3 +20,7 @@ deploy:
     python: 3.4
     tags: true
     all_branches: true
+services:
+  - rabbitmq
+env:
+- AMQP='amqp://guest:guest@localhost/%2F'
