@@ -1,4 +1,6 @@
 import logging
+import os
+import random
 import uuid
 
 from pika import spec
@@ -9,6 +11,7 @@ from tornado import testing
 
 from sprockets.mixins import amqp
 
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -17,6 +20,11 @@ class BaseTestCase(testing.AsyncTestCase):
     @gen.coroutine
     def setUp(self):
         super(BaseTestCase, self).setUp()
+
+        # make sure that our logging statements get executed
+        amqp.LOGGER.enabled = True
+        amqp.LOGGER.setLevel(logging.DEBUG)
+
         self.amqp = amqp.AMQP()
         self.exchange = str(uuid.uuid4())
         self.queue = str(uuid.uuid4())
@@ -76,9 +84,9 @@ class AMQPIntegrationTests(BaseTestCase):
     def publishing_tests(self):
         yield self.ready.wait()
         LOGGER.info('Should be ready')
-        message = uuid.uuid4().hex.encode('latin-1')
+        message = bytes(bytearray(range(255, 0, -1)))
         yield self.amqp.publish(self.exchange, self.routing_key, message,
-                                {'content_type': 'text/plain'})
+                                {'content_type': 'application/octet-stream'})
         LOGGER.info('Published')
         result = yield self.get_message()
         self.assertEqual(message, result[2])

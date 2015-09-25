@@ -126,8 +126,8 @@ class AMQP(object):
         """
         if not self._connection_ready:
             yield self.maybe_connect()
-        LOGGER.debug('Publishing to %s->%s %r (Properties %r)', message,
-                     exchange, routing_key, properties)
+        LOGGER.debug('Publishing to %d bytes->%s %r (Properties %r)',
+                     len(message), exchange, routing_key, properties)
         self.channel.basic_publish(exchange, routing_key, message,
                                    pika.BasicProperties(**properties))
 
