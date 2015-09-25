@@ -22,7 +22,7 @@ from tornado import ioloop
 from tornado import locks
 from tornado import web
 
-version_info = (0, 1, 1)
+version_info = (0, 1, 2)
 __version__ = '.'.join(str(v) for v in version_info)
 
 LOGGER = logging.getLogger(__name__)
