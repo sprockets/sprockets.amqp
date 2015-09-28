@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='sprockets.mixins.amqp',
-    version='0.1.2',
+    version='0.1.3',
     description='Mixin for publishing events to RabbitMQ',
     long_description=open('README.rst').read(),
     url='https://github.com/sprockets/sprockets.mixins.amqp',
@@ -23,7 +23,7 @@ setuptools.setup(
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    py_modules=['sprockets.mixins.amqp'],
+    packages=setuptools.find_packages(),
     namespace_packages=['sprockets', 'sprockets.mixins'],
     install_requires=open('requires/installation.txt').read(),
     zip_safe=True)

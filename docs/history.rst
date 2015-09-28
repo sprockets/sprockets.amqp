@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`0.1.3`_ Sept 28, 2015
+----------------------
+- Use packages instead of py_modules
+
 `0.1.2`_ Sept 25, 2015
 ----------------------
 - Don't log the message body
@@ -13,6 +17,7 @@ Version History
 ----------------------
  - Initial implementation
 
+.. _0.1.3: https://github.com/sprockets/sprockets.amqp/compare/0.1.2...0.1.3
 .. _0.1.2: https://github.com/sprockets/sprockets.amqp/compare/0.1.1...0.1.2
 .. _0.1.1: https://github.com/sprockets/sprockets.amqp/compare/0.1.0...0.1.1
 .. _0.1.0: https://github.com/sprockets/sprockets.amqp/compare/551982c...0.1.0
