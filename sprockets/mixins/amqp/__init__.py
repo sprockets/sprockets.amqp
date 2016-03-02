@@ -52,7 +52,7 @@ class PublishingMixin(object):
         """Prepare the handler, ensuring RabbitMQ is connected or start a new
         connection attempt.
 
-        If a new connection needs ot be created, this will wait until the
+        If a new connection needs to be created, this will wait until the
         connection is established.
 
         Waiting for a new connection will timeout after ``AMQP_TIMEOUT`` and
@@ -100,10 +100,10 @@ class AMQP(object):
 
         """
         # The connection is established, no need to do anything
-        if self._connection_ready:
+        if self._connection_is_ready:
             return
 
-        # If not connecting, connect
+        # If not connecting, then try to connect as needed
         elif not self._connecting:
             self._connection = self._connect()
 
@@ -120,22 +120,11 @@ class AMQP(object):
         :param dict properties: The message properties
 
         """
-        if not self._connection_ready:
-            yield self.maybe_connect()
+        yield self.maybe_connect()
         LOGGER.debug('Publishing to %d bytes->%s %r (Properties %r)',
                      len(message), exchange, routing_key, properties)
         self.channel.basic_publish(exchange, routing_key, message,
                                    pika.BasicProperties(**properties))
-
-    @property
-    def _channel_is_open(self):
-        """Returns ``True``if the connection to RabbitMQ is established and
-        ready to use.
-
-        :rtype: bool
-
-        """
-        return self.channel and self.channel.is_open
 
     def _connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
@@ -155,24 +144,13 @@ class AMQP(object):
                                       custom_ioloop=ioloop.IOLoop.current())
 
     @property
-    def _connection_ready(self):
+    def _connection_is_ready(self):
         """Return True if the both the AMQP connection and channel are open
 
         :rtype: bool
 
         """
-        return (self._ready.is_set() and self._connection_is_open and
-                self.channel.is_open)
-
-    @staticmethod
-    def _connection_timeout():
-        """Invoked when a connection to RabbitMQ has timed out and we
-        want to return an error to the client.
-
-        :raises: tornado.web.HTTPError
-
-        """
-        raise web.HTTPError(504, 'AMQP connection timeout')
+        return self._connection_is_open and self._channel_is_open
 
     @property
     def _connection_is_open(self):
@@ -184,20 +162,40 @@ class AMQP(object):
         """
         return self._connection and self._connection.is_open
 
+    @property
+    def _channel_is_open(self):
+        """Returns ``True``if the connection to RabbitMQ is established and
+        ready to use.
+
+        :rtype: bool
+
+        """
+        return self.channel and self.channel.is_open
+
+    @staticmethod
+    def _connection_timeout():
+        """Invoked when a connection to RabbitMQ has timed out and we
+        want to return an error to the client.
+
+        :raises: tornado.web.HTTPError
+
+        """
+        raise web.HTTPError(504, 'AMQP connection timeout')
+
     def _on_connection_close(self, _connection, reply_code, reply_text):
-        """Called when RabbitMQ has been connected to.
+        """This method is invoked by pika when the connection to RabbitMQ is
+        closed unexpectedly. Since it is unexpected, we will reconnect to
+        RabbitMQ if it disconnects.
 
         :param pika.TornadoConnection _connection: The AMQP connection object
         :param int reply_code: The code for the disconnect
         :param str reply_text: The disconnect reason
 
         """
-        LOGGER.warning('RabbitMQ has disconnected (%s): %s, '
-                       'reconnecting in %s seconds', reply_code,
-                       reply_text, self.RECONNECT_TIMEOUT)
+        LOGGER.warning('RabbitMQ has disconnected (%s): %s, reconnecting',
+                       reply_code, reply_text)
         self.channel = None
-        self._connection = None
-        self._ready.clear()
+        self._connection = self._connect()
 
     def _on_connection_open(self, _connection):
         """This method is called by pika once the connection to RabbitMQ has
@@ -209,7 +207,7 @@ class AMQP(object):
         """
         LOGGER.debug('Connected to RabbitMQ, opening a channel')
         self._connection.add_on_close_callback(self._on_connection_close)
-        self._connection.channel(self._on_channel_open)
+        self._open_channel()
 
     def _on_connection_open_error(self, *args, **kwargs):
         """Called when RabbitMQ has been connected to.
@@ -221,6 +219,18 @@ class AMQP(object):
         self._connecting = False
         self._ready.clear()
         raise web.HTTPError(504, 'AMQP Connection Error')
+
+    def _open_channel(self):
+        """Open a new channel with RabbitMQ by issuing the Channel.Open RPC
+        command. When RabbitMQ responds that the channel is open, the
+        _on_channel_open callback will be invoked by pika.
+
+        """
+        LOGGER.info('Creating a new channel')
+        self.channel = None
+        self._connecting = True
+        self._ready.clear()
+        self._connection.channel(self._on_channel_open)
 
     def _on_channel_open(self, channel):
         """Called when the RabbitMQ accepts the channel open request.
@@ -242,11 +252,9 @@ class AMQP(object):
         :param str reply_text: The disconnect reason
 
         """
-        LOGGER.warning('RabbitMQ closed the channel (%s): %s', reply_code,
-                       reply_text)
-        self.channel = None
-        self._connecting = True
-        self._connection.channel(self._on_channel_open)
+        LOGGER.warning('RabbitMQ closed the channel (%s): %s, reopening...',
+                       reply_code, reply_text)
+        self._open_channel()
 
     @property
     def _parameters(self):
@@ -263,6 +271,6 @@ class AMQP(object):
     def _wait_for_connection(self):
         """Wait for a pending AMQP connection to complete"""
         try:
-            yield self._ready.wait(timeout=self._timeout)
+            yield self._ready.wait(self._timeout)
         except gen.TimeoutError:
             self._connection_timeout()
