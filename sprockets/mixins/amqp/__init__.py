@@ -16,11 +16,7 @@ import os
 import pika
 import pika.exceptions
 
-from tornado import concurrent
-from tornado import gen
-from tornado import ioloop
-from tornado import locks
-from tornado import web
+from tornado import concurrent, gen, ioloop, locks, web
 
 version_info = (0, 1, 3)
 __version__ = '.'.join(str(v) for v in version_info)
@@ -142,12 +138,20 @@ class AMQP(object):
         return self.channel and self.channel.is_open
 
     def _connect(self):
+        """This method connects to RabbitMQ, returning the connection handle.
+        When the connection is established, the _on_connection_open method
+        will be invoked by pika.
+
+        :rtype: pika.TornadoConnection
+
+        """
         """Connect to RabbitMQ and assign a class attribute"""
         LOGGER.info('Creating a new RabbitMQ connection')
         self._connecting = True
         self._ready.clear()
-        return pika.TornadoConnection(self._parameters, self._on_open,
-                                      self._on_open_error,
+        return pika.TornadoConnection(self._parameters,
+                                      self._on_connection_open,
+                                      self._on_connection_open_error,
                                       custom_ioloop=ioloop.IOLoop.current())
 
     @property
@@ -180,30 +184,34 @@ class AMQP(object):
         """
         return self._connection and self._connection.is_open
 
-    def _on_close(self, _connection, reply_code, reply_text):
+    def _on_connection_close(self, _connection, reply_code, reply_text):
         """Called when RabbitMQ has been connected to.
 
+        :param pika.TornadoConnection _connection: The AMQP connection object
         :param int reply_code: The code for the disconnect
         :param str reply_text: The disconnect reason
 
         """
-        LOGGER.warning('RabbitMQ has disconnected (%s): %s', reply_code,
-                       reply_text)
+        LOGGER.warning('RabbitMQ has disconnected (%s): %s, '
+                       'reconnecting in %s seconds', reply_code,
+                       reply_text, self.RECONNECT_TIMEOUT)
         self.channel = None
         self._connection = None
         self._ready.clear()
 
-    def _on_open(self, _connection):
-        """Called when RabbitMQ has been connected to.
+    def _on_connection_open(self, _connection):
+        """This method is called by pika once the connection to RabbitMQ has
+        been established. It passes the handle to the connection object in
+        case we need it.
 
         :param pika.TornadoConnection _connection: The AMQP connection object
 
         """
         LOGGER.debug('Connected to RabbitMQ, opening a channel')
-        self._connection.add_on_close_callback(self._on_close)
+        self._connection.add_on_close_callback(self._on_connection_close)
         self._connection.channel(self._on_channel_open)
 
-    def _on_open_error(self, *args, **kwargs):
+    def _on_connection_open_error(self, *args, **kwargs):
         """Called when RabbitMQ has been connected to.
 
         :raises: tornado.web.HTTPError
@@ -230,6 +238,8 @@ class AMQP(object):
         """Called when the RabbitMQ accepts the channel close request.
 
         :param pika.channel.Channel channel: The channel closed with RabbitMQ
+        :param int reply_code: The code for the disconnect
+        :param str reply_text: The disconnect reason
 
         """
         LOGGER.warning('RabbitMQ closed the channel (%s): %s', reply_code,
