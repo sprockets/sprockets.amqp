@@ -91,7 +91,7 @@ class AMQP(object):
         self._ready = locks.Event()
         self._connecting = False
         self._timeout = datetime.timedelta(
-            seconds=int(os.environ.get('AMQP_TIMEOUT', 1)))
+            seconds=int(os.environ.get('AMQP_TIMEOUT', 5)))
 
     @gen.coroutine
     def maybe_connect(self):
