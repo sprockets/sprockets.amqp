@@ -251,9 +251,11 @@ class AMQP(object):
         :param str reply_text: The disconnect reason
 
         """
-        LOGGER.warning('RabbitMQ closed the channel (%s): %s, reopening...',
+        LOGGER.warning('RabbitMQ closed the channel (%s): %s',
                        reply_code, reply_text)
-        self._open_channel()
+        if not self._connecting:
+            LOGGER.info('Reopening RabbitMQ channel...')
+            self._open_channel()
 
     @property
     def _parameters(self):
