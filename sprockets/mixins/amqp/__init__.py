@@ -134,7 +134,6 @@ class AMQP(object):
         :rtype: pika.TornadoConnection
 
         """
-        """Connect to RabbitMQ and assign a class attribute"""
         LOGGER.info('Creating a new RabbitMQ connection')
         self._connecting = True
         self._ready.clear()
