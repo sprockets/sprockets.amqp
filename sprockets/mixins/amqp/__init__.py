@@ -18,7 +18,7 @@ import pika.exceptions
 
 from tornado import concurrent, gen, ioloop, locks, web
 
-version_info = (0, 1, 3)
+version_info = (0, 1, 4)
 __version__ = '.'.join(str(v) for v in version_info)
 
 LOGGER = logging.getLogger(__name__)

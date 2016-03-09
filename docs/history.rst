@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`0.1.4`_ Mar 09, 2016
+----------------------
+- Reconnect in connection close callback
+
 `0.1.3`_ Sept 28, 2015
 ----------------------
 - Use packages instead of py_modules
@@ -17,6 +21,7 @@ Version History
 ----------------------
  - Initial implementation
 
+.. _0.1.4: https://github.com/sprockets/sprockets.amqp/compare/0.1.3...0.1.4
 .. _0.1.3: https://github.com/sprockets/sprockets.amqp/compare/0.1.2...0.1.3
 .. _0.1.2: https://github.com/sprockets/sprockets.amqp/compare/0.1.1...0.1.2
 .. _0.1.1: https://github.com/sprockets/sprockets.amqp/compare/0.1.0...0.1.1
