@@ -1,6 +1,4 @@
 import logging
-import os
-import random
 import uuid
 
 from pika import spec
