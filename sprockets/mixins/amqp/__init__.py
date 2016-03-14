@@ -60,7 +60,6 @@ class AMQP(object):
     """
     DEFAULT_TIMEOUT = 5
     DEFAULT_CONNECTION_ATTEMPTS = 3
-    MAX_WAITING_SIZE = 10000
 
     def __init__(self, url='amqp://guest:guest@localhost:5672/%2f',
                  io_loop=None, timeout=DEFAULT_TIMEOUT,
@@ -164,17 +163,10 @@ class AMQP(object):
     @gen.coroutine
     def _connection_wait(self):
         """Wait for a pending AMQP connection to complete"""
-        waiting_size = len(self._condition._waiters)
-        if waiting_size < self.MAX_WAITING_SIZE:
-            ready = yield self._condition.wait(
-                timeout=self._io_loop.time() + self._timeout)
-            if ready:
-                raise gen.Return(ready)
-        else:
-            LOGGER.warning('Maximum waiting for AMQP connection is > %s (%s)',
-                           self.MAX_WAITING_SIZE, waiting_size)
-        self._reconnect()  # attempt reconnect
-        raise web.HTTPError(504, 'AMQP connection timeout')
+        ready = yield self._condition.wait(
+            timeout=self._io_loop.time() + self._timeout)
+        if not ready:
+            raise web.HTTPError(504, 'AMQP connection timeout')
 
     def _on_connection_open(self, _connection):
         """This method is called by pika once the connection to RabbitMQ has
