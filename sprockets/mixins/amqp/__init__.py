@@ -138,7 +138,7 @@ class AMQP(object):
             parameters=self._parameters,
             on_open_callback=self._on_connection_open,
             on_open_error_callback=self._on_connection_open_error,
-            custom_ioloop=ioloop.IOLoop.current())
+            custom_ioloop=self._io_loop)
 
     @property
     def _parameters(self):
@@ -243,7 +243,7 @@ class AMQP(object):
             self._open_channel()
 
 
-def install(application, io_loop=None, **kwargs):
+def install(application, **kwargs):
     """Call this to install AMQP for the Tornado application."""
     if getattr(application, 'amqp', None) is not None:
         LOGGER.warning('AMQP is already installed')
