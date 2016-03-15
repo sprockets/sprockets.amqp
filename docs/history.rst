@@ -1,6 +1,11 @@
 Version History
 ===============
 
+`1.0.0`_ Mar 15, 2016
+----------------------
+- Connect to AMQP in ``sprockets.mixins.amqp.install`` and maintain and persist connection
+- Change to use tornado locks.Condition vs locks.Event
+
 `0.1.4`_ Mar 09, 2016
 ----------------------
 - Reconnect in connection close callback
@@ -21,6 +26,7 @@ Version History
 ----------------------
  - Initial implementation
 
+.. _1.0.0: https://github.com/sprockets/sprockets.amqp/compare/0.1.4...1.0.0
 .. _0.1.4: https://github.com/sprockets/sprockets.amqp/compare/0.1.3...0.1.4
 .. _0.1.3: https://github.com/sprockets/sprockets.amqp/compare/0.1.2...0.1.3
 .. _0.1.2: https://github.com/sprockets/sprockets.amqp/compare/0.1.1...0.1.2
