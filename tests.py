@@ -23,7 +23,6 @@ class BaseTestCase(testing.AsyncTestCase):
         amqp.LOGGER.enabled = True
         amqp.LOGGER.setLevel(logging.DEBUG)
 
-        self.amqp = amqp.AMQP()
         self.exchange = str(uuid.uuid4())
         self.queue = str(uuid.uuid4())
         self.routing_key = str(uuid.uuid4())
@@ -31,8 +30,9 @@ class BaseTestCase(testing.AsyncTestCase):
         self.get_response = locks.Event()
         self.message = None
 
-        # This will finish when the AMQP connection is complete
-        yield self.amqp.maybe_connect()
+        self.condition = locks.Condition()
+        amqp.install(self, io_loop=self.io_loop)
+        yield self.condition.wait(self.io_loop.time() + 5)
 
         LOGGER.info('Connected to RabbitMQ, declaring exchange %s',
                     self.exchange)
@@ -78,7 +78,7 @@ class BaseTestCase(testing.AsyncTestCase):
 
 class AMQPIntegrationTests(BaseTestCase):
 
-    @testing.gen_test
+    @testing.gen_test(timeout=10)
     def publishing_tests(self):
         yield self.ready.wait()
         LOGGER.info('Should be ready')

@@ -37,9 +37,18 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
 
    import json
 
-   from tornado import gen
-   from tornado import web
+   from tornado import gen, web
    from sprockets.mixins import amqp
+
+  def make_app(**settings):
+       application = web.Application(
+           [
+               web.url(r'/', RequestHandler),
+           ], **settings)
+
+       amqp.install(application)
+       return application
+
 
    class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
 
@@ -48,6 +57,13 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
            body = {'request': self.request.path, 'args': args, 'kwargs': kwargs}
            yield self.amqp_publish('exchange', 'routing.key', json.dumps(body),
                                    {'content_type': 'application/json'})
+
+Settings
+^^^^^^^^
+
+:url: The AMQP url
+:timeout: The connect timeout, in seconds, if the connection when you try to publish.
+:connection_attempts: The maximum number of retry attempts in case of connection errors.
 
 Source
 ------
