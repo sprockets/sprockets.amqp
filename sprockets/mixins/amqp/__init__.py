@@ -82,13 +82,17 @@ class AMQP(object):
         :param str routing_key: The routing key to publish with
         :param str message: The message body
         :param dict properties: The message properties
+        :raises pika.exceptions.ChannelClosed if the channel unexpectedly
+            closes when pika tries to publish.
+        :raises tornado.web.HTTPError if there is a timeout while trying
+            to connect to RabbitMQ. Sends a 504 response.
 
         """
         if not self._is_ready:
             LOGGER.info('Closed channel, waiting for %s secs',
                         self._timeout)
             yield self._connection_wait()
-        LOGGER.debug('Publishing to %d bytes to %s %r (Properties %r)',
+        LOGGER.debug('Publishing %d bytes to %s %r (Properties %r)',
                      len(message), exchange, routing_key, properties)
         self._channel.basic_publish(exchange, routing_key, message,
                                     pika.BasicProperties(**properties))
