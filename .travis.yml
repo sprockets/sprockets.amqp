@@ -8,8 +8,10 @@ python:
 services:
 - rabbitmq
 install:
-- pip install -r requires/testing.txt
-script: nosetests
+- pip install -r requires/testing.txt -r docs/requirements.txt
+script:
+- nosetests
+- ./setup.py build_sphinx
 after_success:
 - codecov
 deploy:

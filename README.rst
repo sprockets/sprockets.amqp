@@ -2,7 +2,7 @@ sprockets.mixins.amqp
 =====================
 AMQP Publishing Mixin for Tornado RequestHandlers.
 
-|Version| |Downloads| |Travis| |CodeCov| |ReadTheDocs|
+|Version| |Downloads| |Travis| |CodeCov| |Docs|
 
 Installation
 ------------
@@ -16,7 +16,7 @@ and can be installed via ``pip`` or ``easy_install``:
 
 Documentation
 -------------
-https://sprocketsamqp.readthedocs.org
+https://pythonhosted.org/sprockets.mixins.amqp
 
 Requirements
 ------------
@@ -40,7 +40,7 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
    from tornado import gen, web
    from sprockets.mixins import amqp
 
-  def make_app(**settings):
+   def make_app(**settings):
        application = web.Application(
            [
                web.url(r'/', RequestHandler),
@@ -85,5 +85,5 @@ License
 .. |Downloads| image:: https://pypip.in/d/sprockets.mixins.amqp/badge.svg?
    :target: https://pypi.python.org/pypi/sprockets.mixins.amqp
 
-.. |ReadTheDocs| image:: https://readthedocs.org/projects/sprocketsamqp/badge/
-   :target: https://sprocketsamqp.readthedocs.org
+.. |Docs| image:: https://img.shields.io/badge/docs-pythonhosted-green.svg
+   :target: https://pythonhosted.com/sprockets.mixins.amqp
