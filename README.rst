@@ -40,7 +40,7 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
    from tornado import gen, web
    from sprockets.mixins import amqp
 
-  def make_app(**settings):
+   def make_app(**settings):
        application = web.Application(
            [
                web.url(r'/', RequestHandler),
@@ -86,4 +86,4 @@ License
    :target: https://pypi.python.org/pypi/sprockets.mixins.amqp
 
 .. |ReadTheDocs| image:: https://readthedocs.org/projects/sprocketsamqp/badge/
-   :target: https://sprocketsamqp.readthedocs.org
+   :target: https://sprocketsamqp.readthedocs.io
