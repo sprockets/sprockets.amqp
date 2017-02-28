@@ -1,8 +1,8 @@
 Version History
 ===============
 
-`Next Release`_
----------------
+`1.0.1`_ Feb 28, 2016
+---------------------
 - Fixed documentation links and generation.
 
 `1.0.0`_ Mar 15, 2016
@@ -30,7 +30,8 @@ Version History
 ----------------------
  - Initial implementation
 
-.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/1.0.0...HEAD
+.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/1.0.1...HEAD
+.. _1.0.1: https://github.com/sprockets/sprockets.amqp/compare/1.0.0...1.0.1
 .. _1.0.0: https://github.com/sprockets/sprockets.amqp/compare/0.1.4...1.0.0
 .. _0.1.4: https://github.com/sprockets/sprockets.amqp/compare/0.1.3...0.1.4
 .. _0.1.3: https://github.com/sprockets/sprockets.amqp/compare/0.1.2...0.1.3
