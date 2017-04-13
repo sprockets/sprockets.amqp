@@ -25,6 +25,10 @@ Requirements
 
 Example
 -------
+
+You may optionally install ``sprockets.mixins.correlation`` into your request handler to take advantage of automatic correlation_id fetching.
+Otherwise, be sure to set correlation_id as an instance variable on your request handler before sending AMQP messages.
+
 This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
 
 .. code:: bash
@@ -46,24 +50,48 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
                web.url(r'/', RequestHandler),
            ], **settings)
 
-       amqp.install(application)
+       amqp_settings = {
+           "reconnect_delay": 5,
+       }
+
+       amqp.install(application, **amqp_settings)
        return application
 
 
-   class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
+   class RequestHandler(amqp.PublishingMixin,
+                        correlation.HandlerMixin,
+                        web.RequestHandler):
 
        @gen.coroutine
        def get(self, *args, **kwargs):
            body = {'request': self.request.path, 'args': args, 'kwargs': kwargs}
-           yield self.amqp_publish('exchange', 'routing.key', json.dumps(body),
-                                   {'content_type': 'application/json'})
+           yield self.amqp_publish(
+               'exchange',
+               'routing.key',
+               json.dumps(body),
+               {'content_type': 'application/json'}
+           )
 
-Settings
-^^^^^^^^
+AMQP Settings
+^^^^^^^^^^^^^
+:url: The AMQP URL to connect to.
+:reconnect_delay: The optional time in seconds to wait before reconnecting on connection failure.
+:timeout: The optional maximum time to wait for a bad state to resolve before treating the failure as persistent.
+:connection_attempts: The optional number of connection attempts to make before giving up.
+:on_ready_callback: The optional callback to call when the connection to the AMQP server has been established and is ready.
+:on_unavailable_callback: The optional callback to call when the connection to the AMQP server becomes unavailable.
+:on_persistent_failure_callback: The optional callback to call when the connection failure does not resolve itself within the timeout.
+:on_message_returned_callback: The optional callback to call when the AMQP server returns a message.
+:ioloop: An optional IOLoop to override the default with.
 
-:url: The AMQP url
-:timeout: The connect timeout, in seconds, if the connection when you try to publish.
-:connection_attempts: The maximum number of retry attempts in case of connection errors.
+Environment Variables
+^^^^^^^^^^^^^^^^^^^^^
+Any environment variables set will override the corresponding AMQP settings passed into install()
+
+- AMQP_URL
+- AMQP_TIMEOUT
+- AMQP_RECONNECT_DELAY
+- AMQP_CONNECTION_ATTEMPTS
 
 Source
 ------
