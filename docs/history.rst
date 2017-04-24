@@ -1,6 +1,19 @@
 Version History
 ===============
 
+`2.0.0`_ Apr 24, 2017
+---------------------
+- Move Mixin and AMQP client to separate files
+- Replace AMQP connection handling code with latest internal version
+- Provide ability to register callbacks for ready, unavailable, and persistent failure states
+- Remove default AMQP URL from AMQP class, url is now a required parameter for install
+- Rename amqp_publish 'message' parameter to 'body'
+- Add properties for all AMQP states
+- Provide mandatory AMQP properties (app_id, correlation_id, message_id, timestamp) automatically
+    - Mandatory properties cannot be overridden
+- Add unit test coverage for new functionality
+    - Test execution requires a running AMQP server
+
 `1.0.1`_ Feb 28, 2016
 ---------------------
 - Fixed documentation links and generation.
@@ -30,7 +43,8 @@ Version History
 ----------------------
  - Initial implementation
 
-.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/1.0.1...HEAD
+.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.0.0...HEAD
+.. _2.0.0: https://github.com/sprockets/sprockets.amqp/compare/1.0.1...2.0.0
 .. _1.0.1: https://github.com/sprockets/sprockets.amqp/compare/1.0.0...1.0.1
 .. _1.0.0: https://github.com/sprockets/sprockets.amqp/compare/0.1.4...1.0.0
 .. _0.1.4: https://github.com/sprockets/sprockets.amqp/compare/0.1.3...0.1.4
