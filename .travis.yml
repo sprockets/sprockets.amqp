@@ -10,7 +10,7 @@ services:
 install:
 - pip install -r requires/testing.txt -r docs/requirements.txt
 script:
-  - nosetests --with-coverage
+- nosetests --with-coverage
 - ./setup.py build_sphinx
 after_success:
 - codecov
