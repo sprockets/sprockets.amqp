@@ -10,7 +10,7 @@ services:
 install:
 - pip install -r requires/testing.txt -r docs/requirements.txt
 script:
-- nosetests
+  - nosetests --with-coverage
 - ./setup.py build_sphinx
 after_success:
 - codecov
@@ -22,4 +22,5 @@ deploy:
   on:
     python: 3.4
     tags: true
+    all_branches: true
     repo: sprockets/sprockets.mixins.amqp
