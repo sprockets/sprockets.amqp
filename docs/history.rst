@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`Next Release`_
+---------------
+- Fix intentional closing of an AMQP connection.
+
 `2.0.0`_ Apr 24, 2017
 ---------------------
 - Move Mixin and AMQP client to separate files

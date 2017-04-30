@@ -542,3 +542,28 @@ class AMQPIntegrationTests(BaseTestCase):
                          result['properties'].correlation_id)
         self.assertEqual(properties['content_type'],
                          result['properties'].content_type)
+
+
+class AMQPConnectionTests(testing.AsyncTestCase):
+
+    def setUp(self):
+        super(AMQPConnectionTests, self).setUp()
+        self.event = locks.Event()
+        self.amqp = amqp.AMQP(AMQP_URL, io_loop=self.io_loop,
+                              on_ready_callback=self.set_event,
+                              on_unavailable_callback=self.set_event)
+        self.io_loop.add_future(self.event.wait(), lambda _: self.io_loop.stop())
+        self.io_loop.start()
+
+    def set_event(self, *args):
+        self.event.set()
+
+    @testing.gen_test
+    def test_that_connection_can_be_closed(self):
+        self.assertTrue(self.amqp.connected)
+        self.event.clear()
+        self.amqp.close()
+        yield self.event.wait()
+        self.assertFalse(self.amqp.connected)
+        self.assertEqual(self.amqp._state, self.amqp.STATE_CLOSED)
+        self.assertTrue(self.amqp.closed)
