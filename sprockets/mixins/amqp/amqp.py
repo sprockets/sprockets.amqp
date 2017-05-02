@@ -270,8 +270,6 @@ class AMQP(object):
             LOGGER.error('Closed called while not connected (%s)', self._state)
             return
         self._state = self.STATE_CLOSING
-        if self._on_unavailable:
-            self._on_unavailable(self)
         LOGGER.info('Closing RabbitMQ connection')
         self._connection.close()
 
@@ -357,14 +355,18 @@ class AMQP(object):
         :param str reply_text: The server provided reply_text if given
 
         """
+        should_reconnect = self._state != self.STATE_CLOSING
+        start_state = self._state
         self._connection = None
         self._channel = None
         self._state = self.STATE_CLOSED
         if self._on_unavailable:
             self._on_unavailable(self)
-        if self._state != self.STATE_CLOSING:
-            LOGGER.warning('Connection to RabbitMQ closed (%s): %s',
-                           reply_code, reply_text)
+        LOGGER.info('Connection to RabbitMQ closed (%s): %s',
+                    reply_code, reply_text)
+        if should_reconnect:
+            LOGGER.info('Reconnecting in state %d, started in %d',
+                        self._state, start_state)
             self._reconnect()
 
     """
@@ -413,11 +415,15 @@ class AMQP(object):
         :param str reply_text: The text reason the channel was closed
 
         """
-        LOGGER.warning('Channel %i was closed: (%s) %s',
-                       channel, reply_code, reply_text)
-        if self._on_unavailable:
-            self._on_unavailable(self)
-        self._channel = self._open_channel()
+        if self._state == self.STATE_CLOSING:
+            LOGGER.info('Channel %i was intentionally closed (%s) %s',
+                        channel, reply_code, reply_text)
+        else:
+            LOGGER.warning('Channel %i was closed: (%s) %s',
+                           channel, reply_code, reply_text)
+            if self._on_unavailable:
+                self._on_unavailable(self)
+            self._channel = self._open_channel()
 
     def _on_channel_flow(self, method):
         """When RabbitMQ indicates the connection is unblocked, set the state
