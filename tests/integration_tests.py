@@ -44,13 +44,15 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     def on_amqp_ready(self, _client):
         LOGGER.debug('AMQP ready')
         self._app.amqp.channel.exchange_declare(
-            self.on_exchange_declared, self.exchange, auto_delete=True)
+            self.on_exchange_declared, self.exchange,
+            durable=False, auto_delete=True)
 
     def on_exchange_declared(self, frame):
         LOGGER.debug('Exchange declared: %r', frame)
         self._app.amqp.channel.queue_declare(
-            self.on_queue_declared, self.queue, arguments={'x-expires': 30000},
-            auto_delete=True)
+            self.on_queue_declared, self.queue,
+            arguments={'x-expires': 30000},
+            auto_delete=True, durable=False)
 
     def on_queue_declared(self, frame):
         LOGGER.debug('Queue declared: %r', frame)
