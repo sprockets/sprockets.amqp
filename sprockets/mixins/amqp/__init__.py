@@ -389,10 +389,14 @@ class Client(object):
             custom_ioloop=self.io_loop)
 
     def close(self):
-        """Cleanly shutdown the connection to RabbitMQ"""
+        """Cleanly shutdown the connection to RabbitMQ
+
+        :raises: sprockets.mixins.amqp.ConnectionStateError
+
+        """
         if not self.closable:
             LOGGER.warning('Closed called while %s', self.state_description)
-            return
+            raise ConnectionStateError(self.state_description)
         self.state = self.STATE_CLOSING
         LOGGER.info('Closing RabbitMQ connection')
         self.connection.close()
@@ -494,12 +498,7 @@ class Client(object):
         :param str reply_text: The server provided reply_text if given
 
         """
-        if not self.closing:
-            LOGGER.warning('%s closed while %s: (%s) %s',
-                           connection, self.state_description,
-                           reply_code, reply_text)
         start_state = self.state
-
         self.state = self.STATE_CLOSED
         if self.on_unavailable:
             self.on_unavailable(self)
@@ -508,6 +507,9 @@ class Client(object):
         self.channel = None
 
         if start_state != self.STATE_CLOSING:
+            LOGGER.warning('%s closed while %s: (%s) %s',
+                           connection, self.state_description,
+                           reply_code, reply_text)
             self._reconnect()
 
     #

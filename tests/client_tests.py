@@ -1,5 +1,6 @@
 import logging
 
+import mock
 from pika import frame, spec
 
 from sprockets.mixins import amqp
@@ -70,12 +71,79 @@ class ClientStateTestCase(base.AsyncHTTPTestCase):
 class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
 
     def test_connection_blocked(self):
+        self.assertEqual(self.on_unavailable.call_count, 0)
         blocked_frame = frame.Method(
-            1, spec.Connection.Blocked('This is a reason'))
+            0, spec.Connection.Blocked('This is a reason'))
         self.client.on_connection_blocked(blocked_frame)
         self.assertEqual(self.on_unavailable.call_count, 1)
-        self.assertEqual(self.client.state, amqp.Client.STATE_BLOCKED)
+        self.assertTrue(self.client.blocked)
 
+    def test_connection_blocked_no_unavailable(self):
+        self.client.on_unavailable = None
+        blocked_frame = frame.Method(
+            0, spec.Connection.Blocked('This is a reason'))
+        self.client.on_connection_blocked(blocked_frame)
+        self.assertTrue(self.client.blocked)
 
+    def test_connection_unblocked(self):
+        self.client.state = amqp.Client.STATE_IDLE
+        self.assertTrue(self.client.idle)
+        unblocked_frame = frame.Method(0, spec.Connection.Unblocked())
+        self.client.on_connection_unblocked(unblocked_frame)
+        self.assertEqual(self.on_ready.call_count, 1)
+        self.assertTrue(self.client.ready)
 
+    def test_connection_unblocked_no_unavailable(self):
+        self.client.state = amqp.Client.STATE_IDLE
+        self.assertTrue(self.client.idle)
+        self.client.on_ready = None
+        unblocked_frame = frame.Method(0, spec.Connection.Unblocked())
+        self.client.on_connection_unblocked(unblocked_frame)
+        self.assertTrue(self.client.ready)
 
+    def test_close(self):
+        self.client.state = amqp.Client.STATE_READY
+        self.assertTrue(self.client.ready)
+        self.client.close()
+        self.assertEqual(self.client.connection.close.call_count, 1)
+        self.assertTrue(self.client.closing)
+
+    def test_close_when_in_wrong_state(self):
+        self.client.state = amqp.Client.STATE_CLOSING
+        self.assertTrue(self.client.closing)
+        with self.assertRaises(amqp.ConnectionStateError):
+            self.client.close()
+
+    def test_on_connection_close_when_closing(self):
+        self.assertEqual(self.on_unavailable.call_count, 0)
+        self.client.state = amqp.Client.STATE_CLOSING
+        self.assertTrue(self.client.closing)
+        self.client.on_connection_closed(
+            self.client.connection, 200, 'Normal Shutdown')
+        self.assertTrue(self.client.closed)
+        self.assertIsNone(self.client.connection)
+        self.assertIsNone(self.client.channel)
+        self.assertEqual(self.on_unavailable.call_count, 1)
+
+    def test_on_connection_close_no_unavailable_callback(self):
+        self.client.state = amqp.Client.STATE_CLOSING
+        self.assertTrue(self.client.closing)
+        self.client.on_unavailable = None
+        self.client.on_connection_closed(
+            self.client.connection, 200, 'Normal Shutdown')
+        self.assertTrue(self.client.closed)
+        self.assertIsNone(self.client.connection)
+        self.assertIsNone(self.client.channel)
+
+    def test_on_connection_close_when_ready(self):
+        self.assertEqual(self.on_unavailable.call_count, 0)
+        self.client.state = amqp.Client.STATE_READY
+        self.assertTrue(self.client.ready)
+        with mock.patch('sprockets.mixins.amqp.Client._reconnect') as reconnect:
+            self.client.on_connection_closed(
+                self.client.connection, 400, 'You Done Goofed')
+            reconnect.assert_called_once()
+        self.assertTrue(self.client.closed)
+        self.assertIsNone(self.client.connection)
+        self.assertIsNone(self.client.channel)
+        self.assertEqual(self.on_unavailable.call_count, 1)

@@ -63,6 +63,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
         self.channel = mock.Mock()
         self.channel.basic_publish = mock.Mock()
         self.connection.channel = mock.Mock(return_value=self.channel)
+        self.connection.close = mock.Mock()
         self.on_ready = mock.Mock()
         self.on_unavailable = mock.Mock()
         if self.AUTO_INSTALL:
@@ -89,6 +90,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
             result = amqp.install(self._app, io_loop=self.io_loop, **kwargs)
             conn.assert_called_once()
             self.client = self._app.amqp
+            self.client.connection = self.connection
             self.client.channel = self.channel
             self.client.state = amqp.Client.STATE_READY
         return result
