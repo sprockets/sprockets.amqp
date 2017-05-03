@@ -24,6 +24,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
         super(AsyncHTTPTestCase, self).setUp()
         self.correlation_id = str(uuid.uuid4())
         self.exchange = str(uuid.uuid4())
+        self.get_delivered_message = concurrent.Future()
         self.get_returned_message = concurrent.Future()
         self.queue = str(uuid.uuid4())
         self.routing_key = str(uuid.uuid4())
@@ -40,15 +41,6 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
             [(r'/', base.RequestHandler)],
             **{'service': 'test', 'version': amqp.__version__})
 
-    def get_message(self):
-        future = concurrent.Future()
-
-        def on_message(_channel, method, properties, body):
-            future.set_result((method, properties, body))
-
-        self._app.amqp.channel.basic_get(on_message, self.queue)
-        return future
-
     def on_amqp_ready(self, _client):
         LOGGER.debug('AMQP ready')
         self._app.amqp.channel.exchange_declare(
@@ -57,7 +49,8 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     def on_exchange_declared(self, frame):
         LOGGER.debug('Exchange declared: %r', frame)
         self._app.amqp.channel.queue_declare(
-            self.on_queue_declared, self.queue, auto_delete=True)
+            self.on_queue_declared, self.queue, arguments={'x-expires': 30000},
+            auto_delete=True)
 
     def on_queue_declared(self, frame):
         LOGGER.debug('Queue declared: %r', frame)
@@ -66,7 +59,12 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
 
     def on_queue_bound(self, frame):
         LOGGER.debug('Queue bound: %r', frame)
+        self._app.amqp.channel.basic_consume(
+            self.on_message_delivered, self.queue)
         self.io_loop.stop()
+
+    def on_message_delivered(self, _channel, method, properties, body):
+        self.get_delivered_message.set_result((method, properties, body))
 
     def on_message_returned(self, method, properties, body):
         self.get_returned_message.set_result((method, properties, body))
@@ -83,10 +81,10 @@ class PublisherTestCase(AsyncHTTPTestCase):
                 self.exchange, self.routing_key)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        fetched = yield self.get_message()
-        self.assertIsInstance(fetched[0], spec.Basic.GetOk)
-        self.assertEqual(fetched[1].correlation_id, self.correlation_id)
-        self.assertEqual(fetched[2].decode('utf-8'), published['body'])
+        delivered = yield self.get_delivered_message
+        self.assertIsInstance(delivered[0], spec.Basic.Deliver)
+        self.assertEqual(delivered[1].correlation_id, self.correlation_id)
+        self.assertEqual(delivered[2].decode('utf-8'), published['body'])
 
 
 class PublisherConfirmationTestCase(AsyncHTTPTestCase):
@@ -98,10 +96,10 @@ class PublisherConfirmationTestCase(AsyncHTTPTestCase):
                 self.exchange, self.routing_key)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        fetched = yield self.get_message()
-        self.assertIsInstance(fetched[0], spec.Basic.GetOk)
-        self.assertEqual(fetched[1].correlation_id, self.correlation_id)
-        self.assertEqual(fetched[2].decode('utf-8'), published['body'])
+        delivered = yield self.get_delivered_message
+        self.assertIsInstance(delivered[0], spec.Basic.Deliver)
+        self.assertEqual(delivered[1].correlation_id, self.correlation_id)
+        self.assertEqual(delivered[2].decode('utf-8'), published['body'])
 
     @testing.gen_test
     def test_publishing_exchange_failure(self):
