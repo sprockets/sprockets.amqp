@@ -21,8 +21,8 @@ class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
     def get(self, *args, **kwargs):
         LOGGER.debug('Handling Request %r', self.correlation_id)
         parameters = {
-            'exchange': str(uuid.uuid4()),
-            'routing_key': str(uuid.uuid4()),
+            'exchange': self.get_argument('exchange', str(uuid.uuid4())),
+            'routing_key': self.get_argument('routing_key', str(uuid.uuid4())),
             'body': str(uuid.uuid4()),
             'properties': {
                 'content_type': 'application/json',
