@@ -40,12 +40,12 @@ class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
         LOGGER.debug('Responded')
 
 
-class TestCase(testing.AsyncHTTPTestCase):
+class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
 
     AUTO_INSTALL = True
 
     def setUp(self):
-        super(TestCase, self).setUp()
+        super(AsyncHTTPTestCase, self).setUp()
         self._environ = {}
         for prefix in {'AMQP', 'RABBITMQ'}:
             for suffix in {'URL',

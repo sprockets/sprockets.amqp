@@ -10,7 +10,7 @@ from . import base
 LOGGER = logging.getLogger(__name__)
 
 
-class ConfirmationsDisabledMixinTestCase(base.TestCase):
+class ConfirmationsDisabledMixinTestCase(base.AsyncHTTPTestCase):
 
     def get_install_kwargs(self):
         return {'enable_confirmations': False}
@@ -38,7 +38,7 @@ class ConfirmationsDisabledMixinTestCase(base.TestCase):
             self.assertEqual(result['type'], 'NotReadyError')
 
 
-class ConfirmationsEnabledMixinTestCase(base.TestCase):
+class ConfirmationsEnabledMixinTestCase(base.AsyncHTTPTestCase):
 
     def test_mixin_invokes_amqp_publish(self):
         with self.mock_publish(side_effect=self.send_ack) as publish:

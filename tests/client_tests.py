@@ -7,7 +7,7 @@ from . import base
 LOGGER = logging.getLogger(__name__)
 
 
-class ClientStateTestCase(base.TestCase):
+class ClientStateTestCase(base.AsyncHTTPTestCase):
 
     STATES = {'idle', 'connecting', 'ready', 'blocked', 'closing', 'closed'}
 

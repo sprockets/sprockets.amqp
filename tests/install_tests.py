@@ -10,13 +10,13 @@ from . import base
 LOGGER = logging.getLogger(__name__)
 
 
-class DoubleInstallTestCase(base.TestCase):
+class DoubleInstallTestCase(base.AsyncHTTPTestCase):
 
     def test_double_install(self):
         self.assertFalse(amqp.install(self._app))
 
 
-class InstallDefaultsTestCase(base.TestCase):
+class InstallDefaultsTestCase(base.AsyncHTTPTestCase):
 
     def get_app(self):
         return web.Application()
@@ -37,7 +37,7 @@ class InstallDefaultsTestCase(base.TestCase):
                          amqp.DEFAULT_RECONNECT_DELAY)
 
 
-class InstallKWArgsTestCase(base.TestCase):
+class InstallKWArgsTestCase(base.AsyncHTTPTestCase):
 
     url = 'amqp://test:user@test-host:5672/test'
 
@@ -55,7 +55,7 @@ class InstallKWArgsTestCase(base.TestCase):
         self.assertEqual(self.client.io_loop, self.io_loop)
 
 
-class InstallEnvironTestCase(base.TestCase):
+class InstallEnvironTestCase(base.AsyncHTTPTestCase):
 
     AUTO_INSTALL = False
 
@@ -127,7 +127,7 @@ class InstallEnvironTestCase(base.TestCase):
         self.assertEqual(self._app.amqp.reconnect_delay, 10.5)
 
 
-class InstallValueErrorTestCase(base.TestCase):
+class InstallValueErrorTestCase(base.AsyncHTTPTestCase):
 
     AUTO_INSTALL = False
 
