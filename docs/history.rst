@@ -1,9 +1,18 @@
 Version History
 ===============
 
-`Next Release`_
----------------
-- Fix intentional closing of an AMQP connection.
+`2.1.0`_ May 3, 2017
+--------------------
+- Fix intentional closing of an AMQP connection
+- New behavior for publishing that raises exception
+- Add publisher confirmations
+- Make ``sprockets.mixins.amqp.install()`` work with `sprockets.http <https://github.com/sprockets/sprockets.http>`_
+- Add support for environment variables prefixed with ``AMQP_`` or ``RABBITMQ``
+- Clean up AMQP message property behavior, make defaults, but don't change already set values
+- Automatically create the default ``app_id`` AMQP message property
+- Split out tests into a mix of unit tests and integration tests
+- Update state behaviors, names, and transitions
+- All publishing is mandatory, returned messages are logged, a callback can be registered
 
 `2.0.0`_ Apr 24, 2017
 ---------------------
@@ -23,12 +32,12 @@ Version History
 - Fixed documentation links and generation.
 
 `1.0.0`_ Mar 15, 2016
-----------------------
+---------------------
 - Connect to AMQP in ``sprockets.mixins.amqp.install`` and maintain and persist connection
 - Change to use tornado locks.Condition vs locks.Event
 
 `0.1.4`_ Mar 09, 2016
-----------------------
+---------------------
 - Reconnect in connection close callback
 
 `0.1.3`_ Sept 28, 2015

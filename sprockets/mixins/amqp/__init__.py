@@ -30,7 +30,7 @@ except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
     concurrent, exceptions, pika = object(), object(), object()
 
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -112,6 +112,7 @@ class PublishingMixin(object):
         :param bytes body: The message body to send
         :param dict properties: An optional dict of AMQP properties
         :rtype: tornado.concurrent.Future
+
         :raises: :exc:`sprockets.mixins.amqp.AMQPError`
         :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
         :raises: :exc:`sprockets.mixins.amqp.PublishingError`
@@ -513,7 +514,7 @@ class Client(object):
     #
 
     def on_basic_return(self, _channel, method, properties, body):
-        """Log a returned AMQP message, and invoke a callback if registered.
+        """Invoke a registered callback or log the returned message.
 
         :param _channel: The channel the message was sent on
         :type _channel: pika.channel.Channel
@@ -522,13 +523,14 @@ class Client(object):
         :param str, unicode, bytes body: The message body
 
         """
-        LOGGER.critical(
-            '%s message %s published to %s (CID %s) returned: %s',
-            method.exchange, properties.message_id,
-            method.routing_key, properties.correlation_id,
-            method.reply_text)
         if self.on_return:
             self.on_return(method, properties, body)
+        else:
+            LOGGER.critical(
+                '%s message %s published to %s (CID %s) returned: %s',
+                method.exchange, properties.message_id,
+                method.routing_key, properties.correlation_id,
+                method.reply_text)
 
     #
     # Channel event callbacks
