@@ -81,11 +81,13 @@ def install(application, io_loop=None, **kwargs):
             kwargs.setdefault('reconnect_delay', value)
 
     # Set the default AMQP app_id property
-    kwargs.setdefault('default_app_id',
-                      '{}/{}'.format(
-                          application.settings.get(
-                              'service', 'sprockets.mixins.amqp'),
-                          application.settings.get('version', __version__)))
+    if application.settings.get('service') and \
+            application.settings.get('version'):
+        default_app_id = '{}/{}'.format(
+            application.settings['service'], application.settings['version'])
+    else:
+        default_app_id = 'sprockets.mixins.amqp/{}'.format(__version__)
+    kwargs.setdefault('default_app_id', default_app_id)
 
     # Default the default URL value if not already set
     kwargs.setdefault('url', 'amqp://guest:guest@localhost:5672/%2f')
@@ -185,19 +187,17 @@ class Client(object):
         :raises ValueError: If connection_attempts is not > 0
 
         """
-        self.state = self.STATE_IDLE
-
         if not int(connection_attempts):
             raise ValueError(
                 'Invalid connection_attempts value: {}'.format(
                     connection_attempts))
 
-        if not int(reconnect_delay):
+        if not float(reconnect_delay):
             raise ValueError(
                 'Invalid reconnect_delay value: {}'.format(reconnect_delay))
 
+        self.state = self.STATE_IDLE
         self.io_loop = io_loop
-
         self.channel = None
         self.connection = None
         self.connection_attempts = int(connection_attempts)
@@ -206,11 +206,9 @@ class Client(object):
         self.messages = {}
         self.on_ready = on_ready_callback
         self.on_unavailable = on_unavailable_callback
-
         self.publisher_confirmations = enable_confirmations
-        self.reconnect_delay = reconnect_delay
+        self.reconnect_delay = float(reconnect_delay)
         self.url = url
-
         self.parameters = pika.URLParameters(url)
         self.parameters.connection_attempts = self.connection_attempts
 
@@ -398,13 +396,11 @@ class Client(object):
             on_open_error_callback=self.on_connection_open_error,
             on_close_callback=self.on_connection_closed,
             custom_ioloop=self.io_loop)
-        self.connection.connect()
 
     def close(self):
         """Cleanly shutdown the connection to RabbitMQ"""
         if not self.closable:
-            LOGGER.warning('Closed called while not connected (%s)',
-                           self.state_description)
+            LOGGER.warning('Closed called while %s', self.state_description)
             return
         self.state = self.STATE_CLOSING
         LOGGER.info('Closing RabbitMQ connection')
@@ -429,8 +425,7 @@ class Client(object):
                          self.reconnect_delay)
             self.io_loop.call_later(self.reconnect_delay, self.connect)
             return
-        LOGGER.warning('Reconnect called while in state %s',
-                       self.state_description)
+        LOGGER.warning('Reconnect called while %s', self.state_description)
 
     """
     Connection event callbacks
@@ -509,8 +504,9 @@ class Client(object):
 
         """
         if not self.closing:
-            LOGGER.warning('%s closed while in state %s (%s) %s',
-                           connection, self.state, reply_code, reply_text)
+            LOGGER.warning('%s closed while %s: (%s) %s',
+                           connection, self.state_description,
+                           reply_code, reply_text)
         start_state = self.state
 
         self.state = self.STATE_CLOSED
@@ -536,6 +532,8 @@ class Client(object):
         """
         LOGGER.debug('Channel opened')
         self.channel = channel
+        if self.publisher_confirmations:
+            self.channel.confirm_delivery(self.on_delivery_confirmation)
         self.channel.add_on_close_callback(self.on_channel_closed)
         self.channel.add_on_flow_callback(self.on_channel_flow)
         self.state = self.STATE_READY
@@ -557,6 +555,9 @@ class Client(object):
         :param str reply_text: The text reason the channel was closed
 
         """
+        for future in self.messages.values():
+            future.set_exception(AMQPException(reply_code, reply_text))
+        self.messages = {}
         if self.state == self.STATE_CLOSING:
             LOGGER.info('Channel %i was intentionally closed (%s) %s',
                         channel, reply_code, reply_text)
@@ -588,7 +589,7 @@ class Client(object):
 
 class AMQPException(Exception):
     """Base Class for the the AMQP client"""
-    fmt = 'sprockets.mixins.amqp Exception'
+    fmt = 'AMQP Exception ({}): {}'
 
     def __init__(self, *args):
         self._args = args
