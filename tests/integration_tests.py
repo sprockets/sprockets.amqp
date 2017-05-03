@@ -24,12 +24,14 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
         super(AsyncHTTPTestCase, self).setUp()
         self.correlation_id = str(uuid.uuid4())
         self.exchange = str(uuid.uuid4())
+        self.get_returned_message = concurrent.Future()
         self.queue = str(uuid.uuid4())
         self.routing_key = str(uuid.uuid4())
         self.ready = locks.Event()
         amqp.install(self._app, self.io_loop, **{
             'on_ready_callback': self.on_amqp_ready,
             'enable_confirmations': self.CONFIRMATIONS,
+            'on_return_callback': self.on_message_returned,
             'url': 'amqp://guest:guest@127.0.0.1:5672/%2f'})
         self.io_loop.start()
 
@@ -65,6 +67,9 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     def on_queue_bound(self, frame):
         LOGGER.debug('Queue bound: %r', frame)
         self.io_loop.stop()
+
+    def on_message_returned(self, method, properties, body):
+        self.get_returned_message.set_result((method, properties, body))
 
 
 class PublisherTestCase(AsyncHTTPTestCase):
@@ -109,3 +114,18 @@ class PublisherConfirmationTestCase(AsyncHTTPTestCase):
             "AMQP Exception (404): NOT_FOUND - "
             "no exchange 'fail' in vhost '/'")
         self.assertEqual(result['type'], 'AMQPException')
+
+    @testing.gen_test
+    def test_published_message_returned(self):
+        response = yield self.http_client.fetch(
+            self.get_url('/?exchange={}&routing_key=error'.format(
+                 self.exchange)),
+            headers={'Correlation-Id': self.correlation_id})
+        published = json.loads(response.body.decode('utf-8'))
+        returned = yield self.get_returned_message
+        self.assertEqual(returned[0].exchange, self.exchange)
+        self.assertEqual(returned[0].reply_code, 312)
+        self.assertEqual(returned[0].reply_text, 'NO_ROUTE')
+        self.assertEqual(returned[0].routing_key, 'error')
+        self.assertEqual(returned[1].correlation_id, self.correlation_id)
+        self.assertEqual(returned[2].decode('utf-8'), published['body'])

@@ -104,20 +104,13 @@ class PublishingMixin(object):
 
     """
 
-    def amqp_publish(self, exchange, routing_key, body, properties=None,
-                     mandatory=False):
+    def amqp_publish(self, exchange, routing_key, body, properties=None):
         """Publish a message to RabbitMQ
 
-        Supports Correlation ID if available.
-        The ``sprockets.mixins.correlation`` plugin provides this.
-
-        :param str exchange: The exchange to publish the message to.
-        :param str routing_key: The routing key to publish the message with.
-        :param bytes body: The message body to send.
-        :param dict properties: An optional dict of additional properties
-                                to append.
-        :param bool mandatory: Whether to instruct the server to return a
-            message that is not routable. Default: ``False``.
+        :param str exchange: The exchange to publish the message to
+        :param str routing_key: The routing key to publish the message with
+        :param bytes body: The message body to send
+        :param dict properties: An optional dict of AMQP properties
         :rtype: tornado.concurrent.Future
         :raises: :exc:`sprockets.mixins.amqp.AMQPError`
         :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
@@ -128,7 +121,7 @@ class PublishingMixin(object):
         if hasattr(self, 'correlation_id') and getattr(self, 'correlation_id'):
             properties.setdefault('correlation_id', self.correlation_id)
         return self.application.amqp.publish(
-            exchange, routing_key, body, properties, mandatory)
+            exchange, routing_key, body, properties)
 
 
 class Client(object):
@@ -166,6 +159,7 @@ class Client(object):
                  default_app_id=None,
                  on_ready_callback=None,
                  on_unavailable_callback=None,
+                 on_return_callback=None,
                  io_loop=None):
         """Create a new instance of the consumer class, passing in the AMQP
         URL used to connect to RabbitMQ.
@@ -181,10 +175,11 @@ class Client(object):
             the connection to RabbitMQ has been established and is ready.
         :param callable on_unavailable_callback: The optional callback to call
             when the connection to the AMQP server becomes unavailable.
+        :param callable on_return_callback: The optional callback
+            that is invoked if a message is  returned because it is unroutable
         :param tornado.ioloop.IOLoop io_loop: An optional IOLoop to override
-                                              the default with.
-
-        :raises ValueError: If connection_attempts is not > 0
+            the default with.
+        :raises: ValueError
 
         """
         if not int(connection_attempts):
@@ -205,6 +200,7 @@ class Client(object):
         self.message_number = 0
         self.messages = {}
         self.on_ready = on_ready_callback
+        self.on_return = on_return_callback
         self.on_unavailable = on_unavailable_callback
         self.publisher_confirmations = enable_confirmations
         self.reconnect_delay = float(reconnect_delay)
@@ -215,8 +211,7 @@ class Client(object):
         # Automatically start the RabbitMQ connection on creation
         self.connect()
 
-    def publish(self, exchange, routing_key, body, properties=None,
-                mandatory=False):
+    def publish(self, exchange, routing_key, body, properties=None):
         """Publish a message to RabbitMQ. If the RabbitMQ connection is not
         established or is blocked, attempt to wait until sending is possible.
 
@@ -225,8 +220,6 @@ class Client(object):
         :param bytes body: The message body to send.
         :param dict properties: An optional dict of additional properties
                                 to append.
-        :param bool mandatory: Whether to instruct the server to return a
-            message that is not routable. Default: ``False``.
         :rtype: tornado.concurrent.Future
         :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
         :raises: :exc:`sprockets.mixins.amqp.PublishingError`
@@ -248,17 +241,13 @@ class Client(object):
 
             try:
                 self.channel.basic_publish(
-                    exchange,
-                    routing_key,
-                    body,
-                    pika.BasicProperties(**properties),
-                    mandatory)
+                    exchange, routing_key, body,
+                    pika.BasicProperties(**properties), True)
             except exceptions.AMQPError as error:
                 future.set_exception(
                     PublishingFailure(
                         properties['message_id'],
-                        exchange,
-                        routing_key,
+                        exchange, routing_key,
                         error.__class__.__name__))
         else:
             future.set_exception(NotReadyError(
@@ -427,9 +416,9 @@ class Client(object):
             return
         LOGGER.warning('Reconnect called while %s', self.state_description)
 
-    """
-    Connection event callbacks
-    """
+    #
+    # Connection event callbacks
+    #
 
     def on_connection_open(self, connection):
         """This method is called by pika once the connection to RabbitMQ has
@@ -519,9 +508,31 @@ class Client(object):
         if start_state != self.STATE_CLOSING:
             self._reconnect()
 
-    """
-    Channel event callbacks
-    """
+    #
+    # Error Condition Callbacks
+    #
+
+    def on_basic_return(self, _channel, method, properties, body):
+        """Log a returned AMQP message, and invoke a callback if registered.
+
+        :param _channel: The channel the message was sent on
+        :type _channel: pika.channel.Channel
+        :param pika.spec.Basic.Return method: The method object
+        :param pika.spec.BasicProperties properties: The message properties
+        :param str, unicode, bytes body: The message body
+
+        """
+        LOGGER.critical(
+            '%s message %s published to %s (CID %s) returned: %s',
+            method.exchange, properties.message_id,
+            method.routing_key, properties.correlation_id,
+            method.reply_text)
+        if self.on_return:
+            self.on_return(method, properties, body)
+
+    #
+    # Channel event callbacks
+    #
 
     def on_channel_open(self, channel):
         """This method is invoked by pika when the channel has been opened.
@@ -536,6 +547,7 @@ class Client(object):
             self.channel.confirm_delivery(self.on_delivery_confirmation)
         self.channel.add_on_close_callback(self.on_channel_closed)
         self.channel.add_on_flow_callback(self.on_channel_flow)
+        self.channel.add_on_return_callback(self.on_basic_return)
         self.state = self.STATE_READY
         if self.on_ready:
             self.on_ready(self)
@@ -587,11 +599,13 @@ class Client(object):
                 self.on_unavailable(self)
 
 
+
 class AMQPException(Exception):
     """Base Class for the the AMQP client"""
     fmt = 'AMQP Exception ({}): {}'
 
     def __init__(self, *args):
+        super(AMQPException, self).__init__(*args)
         self._args = args
 
     def __str__(self):
@@ -617,4 +631,3 @@ class PublishingFailure(AMQPException):
 
     """
     fmt = 'Message {} was not routed to its intended destination ({}, {}): {}'
-
