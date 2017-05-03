@@ -23,12 +23,13 @@ import time
 import uuid
 
 try:
-    from tornado import concurrent
+    from tornado import concurrent, ioloop
     from pika import exceptions
     import pika
 except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
-    concurrent, exceptions, pika = object(), object(), object()
+    concurrent, ioloop, exceptions, pika = \
+        object(), object(), object(), object()
 
 __version__ = '2.1.0'
 
@@ -193,7 +194,7 @@ class Client(object):
                 'Invalid reconnect_delay value: {}'.format(reconnect_delay))
 
         self.state = self.STATE_IDLE
-        self.io_loop = io_loop
+        self.io_loop = io_loop or ioloop.IOLoop.current()
         self.channel = None
         self.connection = None
         self.connection_attempts = int(connection_attempts)
@@ -466,7 +467,7 @@ class Client(object):
         :param pika.amqp_object.Method method_frame: The blocked method frame
 
         """
-        LOGGER.warning('Connection blocked: %s', method_frame.method.blocked)
+        LOGGER.warning('Connection blocked: %s', method_frame)
         self.state = self.STATE_BLOCKED
         if self.on_unavailable:
             self.on_unavailable(self)
@@ -478,7 +479,7 @@ class Client(object):
         :param pika.amqp_object.Method method_frame: Unblocked method frame
 
         """
-        LOGGER.debug('Connection unblocked: %r', method_frame.method.unblocked)
+        LOGGER.debug('Connection unblocked: %r', method_frame)
         self.state = self.STATE_READY
         if self.on_ready:
             self.on_ready(self)

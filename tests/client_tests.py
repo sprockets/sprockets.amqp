@@ -1,5 +1,7 @@
 import logging
 
+from pika import frame, spec
+
 from sprockets.mixins import amqp
 
 from . import base
@@ -63,3 +65,17 @@ class ClientStateTestCase(base.AsyncHTTPTestCase):
                       amqp.Client.STATE_CLOSED}:
             self.client.state = state
             self.assertFalse(self.client.closable)
+
+
+class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
+
+    def test_connection_blocked(self):
+        blocked_frame = frame.Method(
+            1, spec.Connection.Blocked('This is a reason'))
+        self.client.on_connection_blocked(blocked_frame)
+        self.assertEqual(self.on_unavailable.call_count, 1)
+        self.assertEqual(self.client.state, amqp.Client.STATE_BLOCKED)
+
+
+
+

@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 
-from tornado import gen, testing, web
+from tornado import gen, locks, testing, web
 import mock
 from pika import frame, spec
 
@@ -63,8 +63,10 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
         self.channel = mock.Mock()
         self.channel.basic_publish = mock.Mock()
         self.connection.channel = mock.Mock(return_value=self.channel)
+        self.on_ready = mock.Mock()
+        self.on_unavailable = mock.Mock()
         if self.AUTO_INSTALL:
-            self.install(**self.get_install_kwargs())
+            self.assertTrue(self.install(**self.get_install_kwargs()))
 
     def tearDown(self):
         for key, value in self._environ.items():
@@ -76,16 +78,20 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
                                   'version': amqp.__version__})
 
     def get_install_kwargs(self):
-        return {}
+        return {
+            'on_ready_callback': self.on_ready,
+            'on_unavailable_callback': self.on_unavailable
+        }
 
     def install(self, **kwargs):
         with mock.patch('sprockets.mixins.amqp.Client.connect') as conn:
             conn.return_value = self.connection
-            amqp.install(self._app, io_loop=self.io_loop, **kwargs)
+            result = amqp.install(self._app, io_loop=self.io_loop, **kwargs)
             conn.assert_called_once()
             self.client = self._app.amqp
             self.client.channel = self.channel
             self.client.state = amqp.Client.STATE_READY
+        return result
 
     @contextlib.contextmanager
     def mock_publish(self, side_effect=None):
