@@ -64,9 +64,9 @@ def install(application, io_loop=None, **kwargs):
 
         key = '{}_CONFIRMATIONS'.format(prefix)
         if os.environ.get(key) is not None:
-            value = os.environ[key].lower()
-            LOGGER.debug('Setting enable_confirmations to %s', value == 'true')
-            kwargs.setdefault('enable_confirmations', value == 'true')
+            value = os.environ[key].lower() in {'true', '1'}
+            LOGGER.debug('Setting enable_confirmations to %s', value)
+            kwargs.setdefault('enable_confirmations', value)
 
         key = '{}_CONNECTION_ATTEMPTS'.format(prefix)
         if os.environ.get(key) is not None:
@@ -81,12 +81,11 @@ def install(application, io_loop=None, **kwargs):
             kwargs.setdefault('reconnect_delay', value)
 
     # Set the default AMQP app_id property
-    kwargs['default_app_id'] = '{}/{}'.format(
-        application.settings.get('service'),
-        application.settings.get('version'))
-    if kwargs['default_app_id'] == 'None/None':
-        kwargs['default_app_id'] = \
-            'sprockets.mixins.amqp/{}'.format(__version__)
+    kwargs.setdefault('default_app_id',
+                      '{}/{}'.format(
+                          application.settings.get(
+                              'service', 'sprockets.mixins.amqp'),
+                          application.settings.get('version', __version__)))
 
     # Default the default URL value if not already set
     kwargs.setdefault('url', 'amqp://guest:guest@localhost:5672/%2f')
