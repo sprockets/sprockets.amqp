@@ -18,6 +18,7 @@ after_success:
 deploy:
   provider: pypi
   user: sprockets
+  distributions: sdist bdist_wheel
   password:
     secure: IJVu1MUk2NtRprWkYL+prPRbWrDdSiP+L06S6xERqYnu+fy1ez8/zODazkQGKagXAAujbJK8OwyCgoMzCGDNHV3/NfFtz9dirGVAD2rXZ6AVfHjtEh31L2b2YzXEK0EnBMRsYRjsqLva6q7tfxzjMWKFria25wsd9bN8VlofNDQ=
   on:
