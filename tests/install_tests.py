@@ -96,6 +96,11 @@ class InstallEnvironTestCase(base.TestCase):
         self.install()
         self.assertTrue(self._app.amqp.publisher_confirmations)
 
+    def test_confirmations_1_rabbitmq_prefix(self):
+        os.environ['RABBITMQ_CONFIRMATIONS'] = '1'
+        self.install()
+        self.assertTrue(self._app.amqp.publisher_confirmations)
+
     def test_confirmations_false_rabbitmq_prefix(self):
         os.environ['RABBITMQ_CONFIRMATIONS'] = 'FALSE'
         self.install()
@@ -107,9 +112,9 @@ class InstallEnvironTestCase(base.TestCase):
         self.assertEqual(self._app.amqp.parameters.connection_attempts, 5)
 
     def test_connection_attempts_with_rabbitmq_prefix(self):
-        os.environ['RABBITMQ_CONNECTION_ATTEMPTS'] = '3'
+        os.environ['RABBITMQ_CONNECTION_ATTEMPTS'] = '42'
         self.install()
-        self.assertEqual(self._app.amqp.parameters.connection_attempts, 3)
+        self.assertEqual(self._app.amqp.parameters.connection_attempts, 42)
 
     def test_reconnect_delay_with_amqp_prefix(self):
         os.environ['AMQP_RECONNECT_DELAY'] = '2.3'
