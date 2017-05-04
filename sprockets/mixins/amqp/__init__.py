@@ -454,7 +454,7 @@ class Client(object):
         self._reconnect()
 
     @staticmethod
-    def on_back_pressure_detected(obj):
+    def on_back_pressure_detected(obj):  # pragma: nocover
         """This method is called by pika if it believes that back pressure is
         being applied to the TCP socket.
 

@@ -1,7 +1,7 @@
 import logging
 
 import mock
-from pika import frame, spec
+from pika import exceptions, frame, spec
 
 from sprockets.mixins import amqp
 
@@ -208,3 +208,35 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
         self.assertTrue(self.client.connecting)
         self.client.on_channel_open(self.client.channel)
         self.assertTrue(self.client.ready)
+
+    def test_connect_raises_when_in_wrong_state(self):
+        self.client.state = amqp.Client.STATE_CONNECTING
+        self.assertTrue(self.client.connecting)
+        with self.assertRaises(amqp.ConnectionStateError):
+            self.client.connect()
+
+    def test_reconnect(self):
+        self.client.state = amqp.Client.STATE_IDLE
+        self.assertTrue(self.client.idle)
+        with mock.patch.object(
+                self.client.io_loop, 'call_later') as call_later:
+            self.client._reconnect()
+            call_later.assert_called_once_with(self.client.reconnect_delay,
+                                               self.client.connect)
+
+    def test_reconnect_when_closing(self):
+        self.client.state = amqp.Client.STATE_CLOSING
+        self.assertTrue(self.client.closing)
+        with mock.patch.object(
+                self.client.io_loop, 'call_later') as call_later:
+            self.client._reconnect()
+            call_later.assert_not_called()
+
+    def test_on_connection_open_error(self):
+        self.client.state = amqp.Client.STATE_CONNECTING
+        self.assertTrue(self.client.connecting)
+        with mock.patch.object(self.client, '_reconnect') as reconnect:
+            self.client.on_connection_open_error(
+                self.connection, exceptions.AMQPConnectionError('200', 'Error'))
+            reconnect.assert_called_once()
+        self.assertTrue(self.client.closed)
