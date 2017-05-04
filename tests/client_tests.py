@@ -183,9 +183,12 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
     def test_on_channel_close(self):
         self.client.state = amqp.Client.STATE_READY
         self.assertTrue(self.client.ready)
-        self.client.on_channel_closed(1, 400, 'You Done Goofed')
-        self.assertTrue(self.client.blocked)
-        self.assertEqual(self.on_unavailable.call_count, 1)
+        with mock.patch(
+                'sprockets.mixins.amqp.Client._open_channel') as open_channel:
+            self.client.on_channel_closed(1, 400, 'You Done Goofed')
+            self.assertTrue(self.client.blocked)
+            self.assertEqual(self.on_unavailable.call_count, 1)
+            open_channel.assert_called_once()
 
     def test_on_channel_close_when_closing(self):
         self.client.state = amqp.Client.STATE_CLOSING
@@ -199,3 +202,9 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
         self.assertTrue(self.client.ready)
         self.assertEqual(self.on_ready.call_count, 1)
 
+    def test_on_channel_open_no_callback(self):
+        self.client.on_ready = None
+        self.client.state = amqp.Client.STATE_CONNECTING
+        self.assertTrue(self.client.connecting)
+        self.client.on_channel_open(self.client.channel)
+        self.assertTrue(self.client.ready)
