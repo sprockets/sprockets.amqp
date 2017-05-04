@@ -229,12 +229,12 @@ class Client(object):
         """
         future = concurrent.Future()
 
-        if self.ready:
-            properties = properties or {}
-            properties.setdefault('app_id', self.default_app_id)
-            properties.setdefault('message_id', str(uuid.uuid4()))
-            properties.setdefault('timestamp', int(time.time()))
+        properties = properties or {}
+        properties.setdefault('app_id', self.default_app_id)
+        properties.setdefault('message_id', str(uuid.uuid4()))
+        properties.setdefault('timestamp', int(time.time()))
 
+        if self.ready:
             if self.publisher_confirmations:
                 self.message_number += 1
                 self.messages[self.message_number] = future
