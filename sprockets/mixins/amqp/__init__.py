@@ -31,7 +31,7 @@ except ImportError:  # pragma: nocover
     concurrent, ioloop, exceptions, pika = \
         object(), object(), object(), object()
 
-__version__ = '2.1.0'
+__version__ = '2.1.1'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -270,9 +270,8 @@ class Client(object):
 
         """
         confirmation_type = method_frame.method.NAME.split('.')[1].lower()
-        LOGGER.info('Received %s for delivery tag: %i',
-                    confirmation_type,
-                    method_frame.method.delivery_tag)
+        LOGGER.debug('Received %s for delivery tag: %i',
+                     confirmation_type, method_frame.method.delivery_tag)
 
         if method_frame.method.multiple:
             confirmed = sorted([msg for msg in self.messages
@@ -576,8 +575,8 @@ class Client(object):
             future.set_exception(AMQPException(reply_code, reply_text))
         self.messages = {}
         if self.closing:
-            LOGGER.info('Channel %s was intentionally closed (%s) %s',
-                        channel, reply_code, reply_text)
+            LOGGER.debug('Channel %s was intentionally closed (%s) %s',
+                         channel, reply_code, reply_text)
         else:
             LOGGER.warning('Channel %s was closed: (%s) %s',
                            channel, reply_code, reply_text)

@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`2.1.1`_ May 3, 2017
+--------------------
+- Fix overlogging
+
 `2.1.0`_ May 3, 2017
 --------------------
 - Fix intentional closing of an AMQP connection
