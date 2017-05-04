@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`2.1.2`_ May 3, 2017
+--------------------
+- Move setting default properties up one level to allow access when not ready
+
 `2.1.1`_ May 3, 2017
 --------------------
 - Fix overlogging
@@ -60,7 +64,10 @@ Version History
 ----------------------
  - Initial implementation
 
-.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.0.0...HEAD
+.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.1.2...HEAD
+.. _2.1.2: https://github.com/sprockets/sprockets.amqp/compare/2.1.1...2.1.2
+.. _2.1.1: https://github.com/sprockets/sprockets.amqp/compare/2.1.0...2.1.1
+.. _2.1.0: https://github.com/sprockets/sprockets.amqp/compare/2.0.0...2.1.0
 .. _2.0.0: https://github.com/sprockets/sprockets.amqp/compare/1.0.1...2.0.0
 .. _1.0.1: https://github.com/sprockets/sprockets.amqp/compare/1.0.0...1.0.1
 .. _1.0.0: https://github.com/sprockets/sprockets.amqp/compare/0.1.4...1.0.0
