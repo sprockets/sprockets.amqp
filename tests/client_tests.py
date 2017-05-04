@@ -147,3 +147,55 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
         self.assertIsNone(self.client.connection)
         self.assertIsNone(self.client.channel)
         self.assertEqual(self.on_unavailable.call_count, 1)
+
+    def test_channel_flow_enabled(self):
+        self.client.state = amqp.Client.STATE_BLOCKED
+        self.assertTrue(self.client.blocked)
+        self.client.on_channel_flow(spec.Channel.Flow(True))
+        self.client.state = amqp.Client.STATE_READY
+        self.assertTrue(self.client.ready)
+        self.assertEqual(self.on_ready.call_count, 1)
+
+    def test_channel_flow_enabled_no_callback(self):
+        self.channel.on_ready = None
+        self.client.state = amqp.Client.STATE_BLOCKED
+        self.assertTrue(self.client.blocked)
+        self.client.on_channel_flow(spec.Channel.Flow(True))
+        self.client.state = amqp.Client.STATE_READY
+        self.assertTrue(self.client.ready)
+
+    def test_channel_flow_disabled(self):
+        self.client.state = amqp.Client.STATE_READY
+        self.assertTrue(self.client.ready)
+        self.client.on_channel_flow(spec.Channel.Flow(False))
+        self.client.state = amqp.Client.STATE_BLOCKED
+        self.assertTrue(self.client.blocked)
+        self.assertEqual(self.on_unavailable.call_count, 1)
+
+    def test_channel_flow_disabled_no_callback(self):
+        self.client.on_unavailable = None
+        self.client.state = amqp.Client.STATE_READY
+        self.assertTrue(self.client.ready)
+        self.client.on_channel_flow(spec.Channel.Flow(False))
+        self.client.state = amqp.Client.STATE_BLOCKED
+        self.assertTrue(self.client.blocked)
+
+    def test_on_channel_close(self):
+        self.client.state = amqp.Client.STATE_READY
+        self.assertTrue(self.client.ready)
+        self.client.on_channel_closed(1, 400, 'You Done Goofed')
+        self.assertTrue(self.client.blocked)
+        self.assertEqual(self.on_unavailable.call_count, 1)
+
+    def test_on_channel_close_when_closing(self):
+        self.client.state = amqp.Client.STATE_CLOSING
+        self.assertTrue(self.client.closing)
+        self.client.on_channel_closed(1, 200, 'Normal Shutdown')
+
+    def test_on_channel_open(self):
+        self.client.state = amqp.Client.STATE_CONNECTING
+        self.assertTrue(self.client.connecting)
+        self.client.on_channel_open(self.client.channel)
+        self.assertTrue(self.client.ready)
+        self.assertEqual(self.on_ready.call_count, 1)
+

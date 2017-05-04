@@ -575,12 +575,13 @@ class Client(object):
         for future in self.messages.values():
             future.set_exception(AMQPException(reply_code, reply_text))
         self.messages = {}
-        if self.state == self.STATE_CLOSING:
-            LOGGER.info('Channel %i was intentionally closed (%s) %s',
+        if self.closing:
+            LOGGER.info('Channel %s was intentionally closed (%s) %s',
                         channel, reply_code, reply_text)
         else:
-            LOGGER.warning('Channel %i was closed: (%s) %s',
+            LOGGER.warning('Channel %s was closed: (%s) %s',
                            channel, reply_code, reply_text)
+            self.state = self.STATE_BLOCKED
             if self.on_unavailable:
                 self.on_unavailable(self)
             self.channel = self._open_channel()
