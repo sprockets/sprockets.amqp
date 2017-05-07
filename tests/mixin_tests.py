@@ -15,11 +15,11 @@ class ConfirmationsDisabledMixinTestCase(base.AsyncHTTPTestCase):
     def test_mixin_invokes_amqp_publish(self):
         with self.mock_publish() as publish:
             response = self.fetch('/', headers=self.headers)
-            parameters = json.loads(response.body.decode('utf-8'))
-            self.assertEqual(publish.call_args[0][0], parameters['exchange'])
-            self.assertEqual(publish.call_args[0][1], parameters['routing_key'])
-            self.assertEqual(publish.call_args[0][2], parameters['body'])
-            for key, expectation in parameters['properties'].items():
+            params = json.loads(response.body.decode('utf-8'))
+            self.assertEqual(publish.call_args[0][0], params['exchange'])
+            self.assertEqual(publish.call_args[0][1], params['routing_key'])
+            self.assertEqual(publish.call_args[0][2], params['body'])
+            for key, expectation in params['properties'].items():
                 self.assertEqual(getattr(publish.call_args[0][3], key),
                                  expectation)
 
@@ -40,22 +40,22 @@ class ConfirmationsEnabledMixinTestCase(base.AsyncHTTPTestCase):
     def test_mixin_invokes_amqp_publish(self):
         with self.mock_publish(side_effect=self.send_ack) as publish:
             response = self.fetch('/', headers=self.headers)
-            parameters = json.loads(response.body.decode('utf-8'))
-            self.assertEqual(publish.call_args[0][0], parameters['exchange'])
-            self.assertEqual(publish.call_args[0][1], parameters['routing_key'])
-            self.assertEqual(publish.call_args[0][2], parameters['body'])
-            for key, expectation in parameters['properties'].items():
+            params = json.loads(response.body.decode('utf-8'))
+            self.assertEqual(publish.call_args[0][0], params['exchange'])
+            self.assertEqual(publish.call_args[0][1], params['routing_key'])
+            self.assertEqual(publish.call_args[0][2], params['body'])
+            for key, expectation in params['properties'].items():
                 self.assertEqual(getattr(publish.call_args[0][3], key),
                                  expectation)
 
     def test_mixin_amqp_publish_without_correlation_id(self):
         with self.mock_publish(side_effect=self.send_ack) as publish:
             response = self.fetch('/')
-            parameters = json.loads(response.body.decode('utf-8'))
-            self.assertEqual(publish.call_args[0][0], parameters['exchange'])
-            self.assertEqual(publish.call_args[0][1], parameters['routing_key'])
-            self.assertEqual(publish.call_args[0][2], parameters['body'])
-            for key, expectation in parameters['properties'].items():
+            params = json.loads(response.body.decode('utf-8'))
+            self.assertEqual(publish.call_args[0][0], params['exchange'])
+            self.assertEqual(publish.call_args[0][1], params['routing_key'])
+            self.assertEqual(publish.call_args[0][2], params['body'])
+            for key, expectation in params['properties'].items():
                 self.assertEqual(getattr(publish.call_args[0][3], key),
                                  expectation)
             self.assertIsNone(publish.call_args[0][3].correlation_id)
