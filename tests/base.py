@@ -45,7 +45,6 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     AUTO_INSTALL = True
 
     def setUp(self):
-        super(AsyncHTTPTestCase, self).setUp()
         self._environ = {}
         for prefix in {'AMQP', 'RABBITMQ'}:
             for suffix in {'URL',
@@ -55,8 +54,12 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
                 key = '{}_{}'.format(prefix, suffix)
                 if key in os.environ:
                     LOGGER.debug('Clearing %s', key)
-                    self._environ[key] = os.environ[key]
-                    del os.environ[key]
+                    self.unsetenv(key)
+
+        # Needs to be *AFTER* environment changes since this
+        # calls self.get_app()
+        super(AsyncHTTPTestCase, self).setUp()
+
         self.correlation_id = str(uuid.uuid4())
         self.headers = {'Correlation-Id': self.correlation_id}
         self.connection = mock.Mock()
@@ -71,7 +74,22 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
 
     def tearDown(self):
         for key, value in self._environ.items():
-            os.environ[key] = value
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        self._environ.clear()
+
+    def setenv(self, name, value):
+        self._cache_env(name)
+        os.environ[name] = value
+
+    def unsetenv(self, name):
+        self._cache_env(name)
+        os.environ.pop(name, None)
+
+    def _cache_env(self, name):
+        self._environ.setdefault(name, os.environ.get(name, None))
 
     def get_app(self):
         return web.Application([(r'/', RequestHandler)],

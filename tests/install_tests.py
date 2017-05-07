@@ -1,5 +1,4 @@
 import logging
-import os
 
 from tornado import web
 
@@ -61,18 +60,20 @@ class InstallEnvironTestCase(base.AsyncHTTPTestCase):
 
     def test_url_with_amqp_prefix(self):
         expectation = 'amqp://test:user@test-host:5672/test'
-        os.environ['AMQP_URL'] = expectation
+        self.setenv('AMQP_URL', expectation)
         self.install()
         self.assertEqual(self._app.amqp.url, expectation)
 
     def test_url_with_rabbitmq_prefix(self):
+        self.unsetenv('AMQP_URL')
         expectation = 'amqp://test:user@test-host:5672/test'
-        os.environ['RABBITMQ_URL'] = expectation
+        self.setenv('RABBITMQ_URL', expectation)
         self.install()
         self.assertEqual(self._app.amqp.url, expectation)
 
     def test_connection_parameters(self):
-        os.environ['RABBITMQ_URL'] = 'amqps://test:user@test-host:5671/test'
+        self.unsetenv('AMQP_URL')
+        self.setenv('RABBITMQ_URL', 'amqps://test:user@test-host:5671/test')
         self.install()
         self.assertEqual(self._app.amqp.parameters.ssl, True)
         self.assertEqual(self._app.amqp.parameters.host, 'test-host')
@@ -82,47 +83,47 @@ class InstallEnvironTestCase(base.AsyncHTTPTestCase):
         self.assertEqual(self._app.amqp.parameters.credentials.password, 'user')
 
     def test_confirmations_true_amqp_prefix(self):
-        os.environ['AMQP_CONFIRMATIONS'] = 'True'
+        self.setenv('AMQP_CONFIRMATIONS', 'True')
         self.install()
         self.assertTrue(self._app.amqp.publisher_confirmations)
 
     def test_confirmations_false_amqp_prefix(self):
-        os.environ['AMQP_CONFIRMATIONS'] = 'fAlSE'
+        self.setenv('AMQP_CONFIRMATIONS', 'fALSE')
         self.install()
         self.assertFalse(self._app.amqp.publisher_confirmations)
 
     def test_confirmations_true_rabbitmq_prefix(self):
-        os.environ['RABBITMQ_CONFIRMATIONS'] = 'true'
+        self.setenv('RABBITMQ_CONFIRMATIONS', 'true')
         self.install()
         self.assertTrue(self._app.amqp.publisher_confirmations)
 
     def test_confirmations_1_rabbitmq_prefix(self):
-        os.environ['RABBITMQ_CONFIRMATIONS'] = '1'
+        self.setenv('RABBITMQ_CONFIRMATIONS', '1')
         self.install()
         self.assertTrue(self._app.amqp.publisher_confirmations)
 
     def test_confirmations_false_rabbitmq_prefix(self):
-        os.environ['RABBITMQ_CONFIRMATIONS'] = 'FALSE'
+        self.setenv('RABBITMQ_CONFIRMATIONS', 'FALSE')
         self.install()
         self.assertFalse(self._app.amqp.publisher_confirmations)
 
     def test_connection_attempts_with_amqp_prefix(self):
-        os.environ['AMQP_CONNECTION_ATTEMPTS'] = '5'
+        self.setenv('AMQP_CONNECTION_ATTEMPTS', '5')
         self.install()
         self.assertEqual(self._app.amqp.parameters.connection_attempts, 5)
 
     def test_connection_attempts_with_rabbitmq_prefix(self):
-        os.environ['RABBITMQ_CONNECTION_ATTEMPTS'] = '42'
+        self.setenv('RABBITMQ_CONNECTION_ATTEMPTS', '42')
         self.install()
         self.assertEqual(self._app.amqp.parameters.connection_attempts, 42)
 
     def test_reconnect_delay_with_amqp_prefix(self):
-        os.environ['AMQP_RECONNECT_DELAY'] = '2.3'
+        self.setenv('AMQP_RECONNECT_DELAY', '2.3')
         self.install()
         self.assertEqual(self._app.amqp.reconnect_delay, 2.3)
 
     def test_reconnect_delay_with_rabbitmq_prefix(self):
-        os.environ['RABBITMQ_RECONNECT_DELAY'] = '10.5'
+        self.setenv('RABBITMQ_RECONNECT_DELAY', '10.5')
         self.install()
         self.assertEqual(self._app.amqp.reconnect_delay, 10.5)
 
