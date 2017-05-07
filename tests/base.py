@@ -9,12 +9,13 @@ from pika import frame, spec
 
 from sprockets.mixins import amqp
 from sprockets_amqp import client, exceptions, version
+import sprockets_amqp.web
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
+class RequestHandler(sprockets_amqp.web.PublishingMixin, web.RequestHandler):
 
     def initialize(self):
         self.correlation_id = self.request.headers.get('Correlation-Id')
