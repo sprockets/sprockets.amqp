@@ -49,7 +49,7 @@ setuptools.setup(
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['tests']),
     namespace_packages=['sprockets', 'sprockets.mixins'],
     install_requires=read_requirements('installation.txt'),
     zip_safe=True)
