@@ -1,12 +1,9 @@
-import logging
-
 from tornado import web
 
 from sprockets.mixins import amqp
+import sprockets_amqp.client
 
 from . import base
-
-LOGGER = logging.getLogger(__name__)
 
 
 class DoubleInstallTestCase(base.AsyncHTTPTestCase):
@@ -21,19 +18,20 @@ class InstallDefaultsTestCase(base.AsyncHTTPTestCase):
         return web.Application()
 
     def test_default_app_id(self):
-        self.assertEqual(self.client.default_app_id,
-                         'sprockets.mixins.amqp/{}'.format(amqp.__version__))
+        self.assertEqual(
+            self.client.default_app_id,
+            'sprockets.mixins.amqp/{}'.format(sprockets_amqp.version))
 
     def test_default_publisher_confirmations(self):
         self.assertTrue(self.client.publisher_confirmations)
 
     def test_default_connection_attempts(self):
         self.assertEqual(self.client.parameters.connection_attempts,
-                         amqp.DEFAULT_CONNECTION_ATTEMPTS)
+                         sprockets_amqp.client.DEFAULT_CONNECTION_ATTEMPTS)
 
     def test_default_reconnect_delay(self):
         self.assertEqual(self.client.reconnect_delay,
-                         amqp.DEFAULT_RECONNECT_DELAY)
+                         sprockets_amqp.client.DEFAULT_RECONNECT_DELAY)
 
 
 class InstallKWArgsTestCase(base.AsyncHTTPTestCase):
@@ -48,7 +46,7 @@ class InstallKWArgsTestCase(base.AsyncHTTPTestCase):
 
     def test_default_app_id(self):
         self.assertEqual(self.client.default_app_id,
-                         'test/{}'.format(amqp.__version__))
+                         'test/{}'.format(sprockets_amqp.version))
 
     def test_io_loop(self):
         self.assertEqual(self.client.io_loop, self.io_loop)

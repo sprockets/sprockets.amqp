@@ -8,6 +8,8 @@ import mock
 from pika import frame, spec
 
 from sprockets.mixins import amqp
+from sprockets_amqp import client, exceptions, version
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
                 'type': 'test-message'}}
         try:
             yield self.amqp_publish(**parameters)
-        except amqp.AMQPException as error:
+        except exceptions.AMQPException as error:
             self.write({'error': str(error),
                         'type': error.__class__.__name__,
                         'parameters': parameters})
@@ -92,8 +94,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
 
     def get_app(self):
         return web.Application([(r'/', RequestHandler)],
-                               **{'service': 'test',
-                                  'version': amqp.__version__})
+                               **{'service': 'test', 'version': version})
 
     def get_install_kwargs(self):
         return {
@@ -102,14 +103,14 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
         }
 
     def install(self, **kwargs):
-        with mock.patch('sprockets.mixins.amqp.Client.connect') as conn:
+        with mock.patch('sprockets_amqp.client.Client.connect') as conn:
             conn.return_value = self.connection
             result = amqp.install(self._app, io_loop=self.io_loop, **kwargs)
             conn.assert_called_once()
             self.client = self._app.amqp
             self.client.connection = self.connection
             self.client.channel = self.channel
-            self.client.state = amqp.Client.STATE_READY
+            self.client.state = client.Client.STATE_READY
         return result
 
     @contextlib.contextmanager

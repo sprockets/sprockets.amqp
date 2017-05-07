@@ -1,13 +1,10 @@
 import json
-import logging
 
-from pika import exceptions
+import pika.exceptions
 
-from sprockets.mixins import amqp
+from sprockets_amqp import client, exceptions
 
 from . import base
-
-LOGGER = logging.getLogger(__name__)
 
 
 class ConfirmationsDisabledMixinTestCase(base.AsyncHTTPTestCase):
@@ -27,11 +24,11 @@ class ConfirmationsDisabledMixinTestCase(base.AsyncHTTPTestCase):
                                  expectation)
 
     def test_not_ready_raised(self):
-        self.client.state = amqp.Client.STATE_BLOCKED
+        self.client.state = client.Client.STATE_BLOCKED
         with self.mock_publish():
             response = self.fetch('/', headers=self.headers)
             result = json.loads(response.body.decode('utf-8'))
-            error_expectation = amqp.NotReadyError.fmt.format(
+            error_expectation = exceptions.NotReadyError.fmt.format(
                 self.client.state_description,
                 result['parameters']['properties']['message_id'])
             self.assertEqual(result['error'], error_expectation)
@@ -64,24 +61,24 @@ class ConfirmationsEnabledMixinTestCase(base.AsyncHTTPTestCase):
             self.assertIsNone(publish.call_args[0][3].correlation_id)
 
     def test_not_ready_raised(self):
-        self.client.state = amqp.Client.STATE_BLOCKED
+        self.client.state = client.Client.STATE_BLOCKED
         with self.mock_publish():
             response = self.fetch('/', headers=self.headers)
             result = json.loads(response.body.decode('utf-8'))
-            error_expectation = amqp.NotReadyError.fmt.format(
+            error_expectation = exceptions.NotReadyError.fmt.format(
                 self.client.state_description,
                 result['parameters']['properties']['message_id'])
             self.assertEqual(result['error'], error_expectation)
             self.assertEqual(result['type'], 'NotReadyError')
 
     def test_publishing_failure_raised(self):
-        with self.mock_publish(side_effect=exceptions.AMQPChannelError()):
+        with self.mock_publish(side_effect=pika.exceptions.AMQPChannelError()):
             response = self.fetch('/', headers=self.headers)
             result = json.loads(response.body.decode('utf-8'))
-            error_expectation = amqp.PublishingFailure.fmt.format(
+            error_expectation = exceptions.PublishingFailure.fmt.format(
                 result['parameters']['properties']['message_id'],
                 result['parameters']['exchange'],
                 result['parameters']['routing_key'],
-                exceptions.AMQPChannelError.__name__)
+                pika.exceptions.AMQPChannelError.__name__)
             self.assertEqual(result['error'], error_expectation)
             self.assertEqual(result['type'], 'PublishingFailure')

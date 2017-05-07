@@ -7,6 +7,7 @@ from pika import spec
 from tornado import concurrent, locks, testing, web
 
 from sprockets.mixins import amqp
+import sprockets_amqp
 
 from . import base
 
@@ -41,7 +42,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     def get_app(self):
         return web.Application(
             [(r'/', base.RequestHandler)],
-            **{'service': 'test', 'version': amqp.__version__})
+            **{'service': 'test', 'version': sprockets_amqp.version})
 
     def on_amqp_ready(self, _client):
         LOGGER.debug('AMQP ready')
