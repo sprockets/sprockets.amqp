@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import uuid
 
 from pika import spec
@@ -33,7 +34,8 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
             'on_ready_callback': self.on_amqp_ready,
             'enable_confirmations': self.CONFIRMATIONS,
             'on_return_callback': self.on_message_returned,
-            'url': 'amqp://guest:guest@127.0.0.1:5672/%2f'})
+            'url': os.environ.get('AMQP_URL',
+                                  'amqp://guest:guest@127.0.0.1:5672/%2f')})
         self.io_loop.start()
 
     def get_app(self):

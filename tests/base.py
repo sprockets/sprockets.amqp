@@ -47,8 +47,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     def setUp(self):
         self._environ = {}
         for prefix in {'AMQP', 'RABBITMQ'}:
-            for suffix in {'URL',
-                           'CONFIRMATIONS',
+            for suffix in {'CONFIRMATIONS',
                            'CONNECTION_ATTEMPTS',
                            'RECONNECT_DELAY'}:
                 key = '{}_{}'.format(prefix, suffix)
