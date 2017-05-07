@@ -139,10 +139,11 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
         self.assertEqual(self.on_unavailable.call_count, 0)
         self.client.state = client.Client.STATE_READY
         self.assertTrue(self.client.ready)
-        with mock.patch('sprockets_amqp.client.Client._reconnect') as reconnect:
-            self.client.on_connection_closed(
-                self.client.connection, 400, 'You Done Goofed')
-            reconnect.assert_called_once()
+
+        self.client._reconnect = mock.Mock()
+        self.client.on_connection_closed(
+            self.client.connection, 400, 'You Done Goofed')
+        self.client._reconnect.assert_called_once()
         self.assertTrue(self.client.closed)
         self.assertIsNone(self.client.connection)
         self.assertIsNone(self.client.channel)
@@ -183,12 +184,12 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
     def test_on_channel_close(self):
         self.client.state = client.Client.STATE_READY
         self.assertTrue(self.client.ready)
-        with mock.patch(
-                'sprockets_amqp.client.Client._open_channel') as open_channel:
-            self.client.on_channel_closed(1, 400, 'You Done Goofed')
-            self.assertTrue(self.client.blocked)
-            self.assertEqual(self.on_unavailable.call_count, 1)
-            open_channel.assert_called_once()
+
+        self.client._open_channel = mock.Mock()
+        self.client.on_channel_closed(1, 400, 'You Done Goofed')
+        self.assertTrue(self.client.blocked)
+        self.assertEqual(self.on_unavailable.call_count, 1)
+        self.client._open_channel.assert_called_once()
 
     def test_on_channel_close_when_closing(self):
         self.client.state = client.Client.STATE_CLOSING
@@ -235,8 +236,9 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
     def test_on_connection_open_error(self):
         self.client.state = client.Client.STATE_CONNECTING
         self.assertTrue(self.client.connecting)
-        with mock.patch.object(self.client, '_reconnect') as reconnect:
-            self.client.on_connection_open_error(
-                self.connection, exceptions.AMQPException('200', 'Error'))
-            reconnect.assert_called_once()
+
+        self.client._reconnect = mock.Mock()
+        self.client.on_connection_open_error(
+            self.connection, exceptions.AMQPException('200', 'Error'))
+        self.client._reconnect.assert_called_once()
         self.assertTrue(self.client.closed)
