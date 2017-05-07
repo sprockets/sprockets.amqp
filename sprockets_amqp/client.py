@@ -37,7 +37,6 @@ class Client(object):
     commands that were issued and that should surface in the output as well.
 
     """
-    STATE_DESC = STATE_DESC
 
     def __init__(self,
                  url,
