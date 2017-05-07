@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 
-from tornado import gen, locks, testing, web
+from tornado import gen, testing, web
 import mock
 from pika import frame, spec
 
