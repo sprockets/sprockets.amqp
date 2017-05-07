@@ -3,11 +3,10 @@ import logging
 import os
 import uuid
 
+from pika import frame, spec
 from tornado import gen, testing, web
 import mock
-from pika import frame, spec
 
-from sprockets.mixins import amqp
 from sprockets_amqp import client, exceptions, version
 import sprockets_amqp.web
 
@@ -106,7 +105,8 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     def install(self, **kwargs):
         with mock.patch('sprockets_amqp.client.Client.connect') as conn:
             conn.return_value = self.connection
-            result = amqp.install(self._app, io_loop=self.io_loop, **kwargs)
+            result = sprockets_amqp.web.install(
+                self._app, io_loop=self.io_loop, **kwargs)
             conn.assert_called_once()
             self.client = self._app.amqp
             self.client.connection = self.connection

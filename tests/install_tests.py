@@ -1,6 +1,6 @@
 from tornado import web
 
-from sprockets.mixins import amqp
+import sprockets_amqp.web
 import sprockets_amqp.client
 
 from . import base
@@ -9,7 +9,7 @@ from . import base
 class DoubleInstallTestCase(base.AsyncHTTPTestCase):
 
     def test_double_install(self):
-        self.assertFalse(amqp.install(self._app))
+        self.assertFalse(sprockets_amqp.web.install(self._app))
 
 
 class InstallDefaultsTestCase(base.AsyncHTTPTestCase):

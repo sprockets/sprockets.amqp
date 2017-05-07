@@ -6,8 +6,7 @@ import uuid
 from pika import spec
 from tornado import concurrent, locks, testing, web
 
-from sprockets.mixins import amqp
-import sprockets_amqp
+import sprockets_amqp.web
 
 from . import base
 
@@ -31,7 +30,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
         self.queue = str(uuid.uuid4())
         self.routing_key = str(uuid.uuid4())
         self.ready = locks.Event()
-        amqp.install(self._app, self.io_loop, **{
+        sprockets_amqp.web.install(self._app, self.io_loop, **{
             'on_ready_callback': self.on_amqp_ready,
             'enable_confirmations': self.CONFIRMATIONS,
             'on_return_callback': self.on_message_returned,
