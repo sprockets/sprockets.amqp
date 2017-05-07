@@ -22,18 +22,27 @@ import sys
 import time
 import uuid
 
+import sprockets_amqp.exceptions  # can be safely imported
+
 try:
     from tornado import concurrent, ioloop
-    from pika import exceptions
-    import pika
+    import pika.exceptions
 except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
-    concurrent, ioloop, exceptions, pika = \
+    concurrent, ioloop, pika, Client = \
         object(), object(), object(), object()
 
-__version__ = '2.1.2'
 
 LOGGER = logging.getLogger(__name__)
+
+
+# Compatibility bindings -- please stop using these, use the ones from
+# the appropriate sprockets_amqp module instead.
+__version__ = sprockets_amqp.version
+AMQPException = sprockets_amqp.exceptions.AMQPException
+ConnectionStateError = sprockets_amqp.exceptions.ConnectionStateError
+NotReadyError = sprockets_amqp.exceptions.NotReadyError
+PublishingFailure = sprockets_amqp.exceptions.PublishingFailure
 
 DEFAULT_RECONNECT_DELAY = 5
 DEFAULT_CONNECTION_ATTEMPTS = 3
@@ -114,9 +123,9 @@ class PublishingMixin(object):
         :param dict properties: An optional dict of AMQP properties
         :rtype: tornado.concurrent.Future
 
-        :raises: :exc:`sprockets.mixins.amqp.AMQPError`
-        :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
-        :raises: :exc:`sprockets.mixins.amqp.PublishingError`
+        :raises: :exc:`sprockets_amqp.exceptions.AMQPException`
+        :raises: :exc:`sprockets_amqp.exceptions.NotReadyError`
+        :raises: :exc:`sprockets_amqp.exceptions.PublishingFailure`
 
         """
         properties = properties or {}
@@ -245,9 +254,9 @@ class Client(object):
                 self.channel.basic_publish(
                     exchange, routing_key, body,
                     pika.BasicProperties(**properties), True)
-            except exceptions.AMQPError as error:
+            except pika.exceptions.AMQPError as error:
                 future.set_exception(
-                    PublishingFailure(
+                    sprockets_amqp.exceptions.PublishingFailure(
                         properties['message_id'],
                         exchange, routing_key,
                         error.__class__.__name__))
@@ -602,37 +611,3 @@ class Client(object):
             self.state = self.STATE_BLOCKED
             if self.on_unavailable:
                 self.on_unavailable(self)
-
-
-
-class AMQPException(Exception):
-    """Base Class for the the AMQP client"""
-    fmt = 'AMQP Exception ({}): {}'
-
-    def __init__(self, *args):
-        super(AMQPException, self).__init__(*args)
-        self._args = args
-
-    def __str__(self):
-        return self.fmt.format(*self._args)
-
-
-class ConnectionStateError(AMQPException):
-    """Invoked when reconnect is attempted but the state is incorrect"""
-    fmt = 'Attempted to close the connection while {}'
-
-
-class NotReadyError(AMQPException):
-    """Raised if the :meth:`Client.publish` is invoked and the connection is
-    not ready for publishing.
-
-    """
-    fmt = 'Connection is {} when publishing message {}'
-
-
-class PublishingFailure(AMQPException):
-    """Raised if the :meth:`Client.publish` is invoked and an error occurs or
-    the message delivery is not confirmed.
-
-    """
-    fmt = 'Message {} was not routed to its intended destination ({}, {}): {}'

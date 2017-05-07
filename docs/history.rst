@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`Next Release`_
+---------------
+- Repackage into non-namespace package named ``sprockets_amqp``.
+
 `2.1.2`_ May 3, 2017
 --------------------
 - Move setting default properties up one level to allow access when not ready
