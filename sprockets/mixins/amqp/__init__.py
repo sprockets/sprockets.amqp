@@ -16,7 +16,6 @@ The ``AMQP``` prefix is interchangeable with ``RABBITMQ``. For example, you can
 use ``AMQP_URL`` or ``RABBITMQ_URL``.
 
 """
-import logging
 import sys
 
 import sprockets_amqp.exceptions  # can be safely imported

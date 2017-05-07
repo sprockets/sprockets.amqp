@@ -31,18 +31,19 @@ Otherwise, be sure to set correlation_id as an instance variable on your request
 
 This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
 
-.. code:: bash
+.. code-block:: bash
 
    export AMQP_URL="amqp://user:password@rabbitmq_host:5672/%2f"
    python my-example-app.py
 
 
-.. code:: python
+.. code-block:: python
 
    import json
 
    from tornado import gen, web
    from sprockets.mixins import amqp
+   import sprockets_amqp.web
 
    def make_app(**settings):
        application = web.Application(
@@ -54,11 +55,11 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
            "reconnect_delay": 5,
        }
 
-       amqp.install(application, **amqp_settings)
+       sprockets_amqp.web.install(application, **amqp_settings)
        return application
 
 
-   class RequestHandler(amqp.PublishingMixin,
+   class RequestHandler(sprockets_amqp.web.PublishingMixin,
                         correlation.HandlerMixin,
                         web.RequestHandler):
 
@@ -101,8 +102,8 @@ License
 -------
 ``sprockets.mixins.amqp`` is released under the `3-Clause BSD license <https://github.com/sprockets/sprockets.mixins.amqp/blob/master/LICENSE>`_.
 
-.. |Version| image:: https://badge.fury.io/py/sprockets.mixins.amqp.svg?
-   :target: http://badge.fury.io/py/sprockets.mixins.amqp
+.. |Version| image:: https://img.shields.io/pypi/v/sprockets.mixins.amqp.svg
+   :target: https://pypi.python.org/pypi/sprockets.mixins.amqp
 
 .. |Travis| image:: https://travis-ci.org/sprockets/sprockets.mixins.amqp.svg?branch=master
    :target: https://travis-ci.org/sprockets/sprockets.mixins.amqp
@@ -110,7 +111,7 @@ License
 .. |CodeCov| image:: http://codecov.io/github/sprockets/sprockets.mixins.amqp/coverage.svg?branch=master
    :target: https://codecov.io/github/sprockets/sprockets.mixins.amqp?branch=master
 
-.. |Downloads| image:: https://pypip.in/d/sprockets.mixins.amqp/badge.svg?
+.. |Downloads| image:: https://img.shields.io/pypi/dm/sprockets.mixins.amqp.svg
    :target: https://pypi.python.org/pypi/sprockets.mixins.amqp
 
 .. |Docs| image:: https://img.shields.io/badge/docs-pythonhosted-green.svg

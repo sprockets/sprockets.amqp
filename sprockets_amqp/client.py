@@ -495,4 +495,3 @@ class Client(object):
             self.state = self.STATE_BLOCKED
             if self.on_unavailable:
                 self.on_unavailable(self)
-
