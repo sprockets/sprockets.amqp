@@ -111,7 +111,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
             self.client = self._app.amqp
             self.client.connection = self.connection
             self.client.channel = self.channel
-            self.client.state = client.Client.STATE_READY
+            self.client.state = client.STATE_READY
         return result
 
     @contextlib.contextmanager

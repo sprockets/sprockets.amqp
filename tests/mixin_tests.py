@@ -24,7 +24,7 @@ class ConfirmationsDisabledMixinTestCase(base.AsyncHTTPTestCase):
                                  expectation)
 
     def test_not_ready_raised(self):
-        self.client.state = client.Client.STATE_BLOCKED
+        self.client.state = client.STATE_BLOCKED
         with self.mock_publish():
             response = self.fetch('/', headers=self.headers)
             result = json.loads(response.body.decode('utf-8'))
@@ -61,7 +61,7 @@ class ConfirmationsEnabledMixinTestCase(base.AsyncHTTPTestCase):
             self.assertIsNone(publish.call_args[0][3].correlation_id)
 
     def test_not_ready_raised(self):
-        self.client.state = client.Client.STATE_BLOCKED
+        self.client.state = client.STATE_BLOCKED
         with self.mock_publish():
             response = self.fetch('/', headers=self.headers)
             result = json.loads(response.body.decode('utf-8'))

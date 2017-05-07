@@ -8,6 +8,19 @@ import pika.exceptions
 from sprockets_amqp import exceptions
 
 
+STATE_IDLE = 1
+STATE_CONNECTING = 2
+STATE_READY = 3
+STATE_BLOCKED = 4
+STATE_CLOSING = 5
+STATE_CLOSED = 6
+STATE_DESC = {STATE_IDLE: 'Idle',
+              STATE_CONNECTING: 'Connecting',
+              STATE_READY: 'Ready',
+              STATE_BLOCKED: 'Blocked',
+              STATE_CLOSING: 'Closing',
+              STATE_CLOSED: 'Closed'}
+
 DEFAULT_RECONNECT_DELAY = 5
 DEFAULT_CONNECTION_ATTEMPTS = 3
 
@@ -24,20 +37,7 @@ class Client(object):
     commands that were issued and that should surface in the output as well.
 
     """
-    STATE_IDLE = 0x01
-    STATE_CONNECTING = 0x02
-    STATE_READY = 0x03
-    STATE_BLOCKED = 0x04
-    STATE_CLOSING = 0x05
-    STATE_CLOSED = 0x06
-
-    STATE_DESC = {
-        0x01: 'Idle',
-        0x02: 'Connecting',
-        0x03: 'Ready',
-        0x04: 'Blocked',
-        0x05: 'Closing',
-        0x06: 'Closed'}
+    STATE_DESC = STATE_DESC
 
     def __init__(self,
                  url,
@@ -80,7 +80,7 @@ class Client(object):
                 'Invalid reconnect_delay value: {}'.format(reconnect_delay))
 
         self.logger = logging.getLogger('sprockets_amqp.Client')
-        self.state = self.STATE_IDLE
+        self.state = STATE_IDLE
         self.io_loop = io_loop or ioloop.IOLoop.current()
         self.channel = None
         self.connection = None
@@ -190,7 +190,7 @@ class Client(object):
         :rtype: bool
 
         """
-        return self.state == self.STATE_IDLE
+        return self.state == STATE_IDLE
 
     @property
     def connecting(self):
@@ -200,7 +200,7 @@ class Client(object):
         :rtype: bool
 
         """
-        return self.state == self.STATE_CONNECTING
+        return self.state == STATE_CONNECTING
 
     @property
     def blocked(self):
@@ -209,7 +209,7 @@ class Client(object):
         :rtype: bool
 
         """
-        return self.state == self.STATE_BLOCKED
+        return self.state == STATE_BLOCKED
 
     @property
     def closable(self):
@@ -218,7 +218,7 @@ class Client(object):
         :rtype: bool
 
         """
-        return self.state in [self.STATE_BLOCKED, self.STATE_READY]
+        return self.state in [STATE_BLOCKED, STATE_READY]
 
     @property
     def closed(self):
@@ -227,7 +227,7 @@ class Client(object):
         :rtype: bool
 
         """
-        return self.state == self.STATE_CLOSED
+        return self.state == STATE_CLOSED
 
     @property
     def closing(self):
@@ -236,7 +236,7 @@ class Client(object):
         :rtype: bool
 
         """
-        return self.state == self.STATE_CLOSING
+        return self.state == STATE_CLOSING
 
     @property
     def ready(self):
@@ -246,7 +246,7 @@ class Client(object):
         :rtype: bool
 
         """
-        return self.state == self.STATE_READY
+        return self.state == STATE_READY
 
     @property
     def state_description(self):
@@ -255,7 +255,7 @@ class Client(object):
         :rtype: str
 
         """
-        return self.STATE_DESC[self.state]
+        return STATE_DESC[self.state]
 
     def connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
@@ -268,7 +268,7 @@ class Client(object):
         if not self.idle and not self.closed:
             raise exceptions.ConnectionStateError(self.state_description)
         self.logger.debug('Connecting to %s', self.url)
-        self.state = self.STATE_CONNECTING
+        self.state = STATE_CONNECTING
         self.connection = pika.TornadoConnection(
             parameters=self.parameters,
             on_open_callback=self.on_connection_open,
@@ -286,7 +286,7 @@ class Client(object):
             self.logger.warning('Closed called while %s',
                                 self.state_description)
             raise exceptions.ConnectionStateError(self.state_description)
-        self.state = self.STATE_CLOSING
+        self.state = STATE_CLOSING
         self.logger.info('Closing RabbitMQ connection')
         self.connection.close()
 
@@ -340,7 +340,7 @@ class Client(object):
         """
         self.logger.critical('Could not connect to RabbitMQ (%s): %r',
                              connection, error)
-        self.state = self.STATE_CLOSED
+        self.state = STATE_CLOSED
         self._reconnect()
 
     def on_back_pressure_detected(self, obj):  # pragma: nocover
@@ -361,7 +361,7 @@ class Client(object):
 
         """
         self.logger.warning('Connection blocked: %s', method_frame)
-        self.state = self.STATE_BLOCKED
+        self.state = STATE_BLOCKED
         if self.on_unavailable:
             self.on_unavailable(self)
 
@@ -373,7 +373,7 @@ class Client(object):
 
         """
         self.logger.debug('Connection unblocked: %r', method_frame)
-        self.state = self.STATE_READY
+        self.state = STATE_READY
         if self.on_ready:
             self.on_ready(self)
 
@@ -389,14 +389,14 @@ class Client(object):
 
         """
         start_state = self.state
-        self.state = self.STATE_CLOSED
+        self.state = STATE_CLOSED
         if self.on_unavailable:
             self.on_unavailable(self)
 
         self.connection = None
         self.channel = None
 
-        if start_state != self.STATE_CLOSING:
+        if start_state != STATE_CLOSING:
             self.logger.warning('%s closed while %s: (%s) %s',
                                 connection, self.state_description,
                                 reply_code, reply_text)
@@ -444,7 +444,7 @@ class Client(object):
         self.channel.add_on_close_callback(self.on_channel_closed)
         self.channel.add_on_flow_callback(self.on_channel_flow)
         self.channel.add_on_return_callback(self.on_basic_return)
-        self.state = self.STATE_READY
+        self.state = STATE_READY
         if self.on_ready:
             self.on_ready(self)
 
@@ -473,7 +473,7 @@ class Client(object):
         else:
             self.logger.warning('Channel %s was closed: (%s) %s',
                                 channel, reply_code, reply_text)
-            self.state = self.STATE_BLOCKED
+            self.state = STATE_BLOCKED
             if self.on_unavailable:
                 self.on_unavailable(self)
             self.channel = self._open_channel()
@@ -487,11 +487,11 @@ class Client(object):
         """
         if method.active:
             self.logger.info('Channel flow is active (READY)')
-            self.state = self.STATE_READY
+            self.state = STATE_READY
             if self.on_ready:
                 self.on_ready(self)
         else:
             self.logger.warning('Channel flow is inactive (BLOCKED)')
-            self.state = self.STATE_BLOCKED
+            self.state = STATE_BLOCKED
             if self.on_unavailable:
                 self.on_unavailable(self)
