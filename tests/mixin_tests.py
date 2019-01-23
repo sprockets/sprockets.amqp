@@ -20,7 +20,8 @@ class ConfirmationsDisabledMixinTestCase(base.AsyncHTTPTestCase):
             response = self.fetch('/', headers=self.headers)
             parameters = json.loads(response.body.decode('utf-8'))
             self.assertEqual(publish.call_args[0][0], parameters['exchange'])
-            self.assertEqual(publish.call_args[0][1], parameters['routing_key'])
+            self.assertEqual(publish.call_args[0][1],
+                             parameters['routing_key'])
             self.assertEqual(publish.call_args[0][2], parameters['body'])
             for key, expectation in parameters['properties'].items():
                 self.assertEqual(getattr(publish.call_args[0][3], key),
@@ -45,7 +46,8 @@ class ConfirmationsEnabledMixinTestCase(base.AsyncHTTPTestCase):
             response = self.fetch('/', headers=self.headers)
             parameters = json.loads(response.body.decode('utf-8'))
             self.assertEqual(publish.call_args[0][0], parameters['exchange'])
-            self.assertEqual(publish.call_args[0][1], parameters['routing_key'])
+            self.assertEqual(publish.call_args[0][1],
+                             parameters['routing_key'])
             self.assertEqual(publish.call_args[0][2], parameters['body'])
             for key, expectation in parameters['properties'].items():
                 self.assertEqual(getattr(publish.call_args[0][3], key),
@@ -55,8 +57,10 @@ class ConfirmationsEnabledMixinTestCase(base.AsyncHTTPTestCase):
         with self.mock_publish(side_effect=self.send_ack) as publish:
             response = self.fetch('/')
             parameters = json.loads(response.body.decode('utf-8'))
-            self.assertEqual(publish.call_args[0][0], parameters['exchange'])
-            self.assertEqual(publish.call_args[0][1], parameters['routing_key'])
+            self.assertEqual(publish.call_args[0][0],
+                             parameters['exchange'])
+            self.assertEqual(publish.call_args[0][1],
+                             parameters['routing_key'])
             self.assertEqual(publish.call_args[0][2], parameters['body'])
             for key, expectation in parameters['properties'].items():
                 self.assertEqual(getattr(publish.call_args[0][3], key),

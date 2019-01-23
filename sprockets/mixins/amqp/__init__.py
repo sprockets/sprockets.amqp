@@ -604,7 +604,6 @@ class Client(object):
                 self.on_unavailable(self)
 
 
-
 class AMQPException(Exception):
     """Base Class for the the AMQP client"""
     fmt = 'AMQP Exception ({}): {}'
