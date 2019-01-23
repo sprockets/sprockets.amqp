@@ -139,7 +139,8 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
         self.assertEqual(self.on_unavailable.call_count, 0)
         self.client.state = amqp.Client.STATE_READY
         self.assertTrue(self.client.ready)
-        with mock.patch('sprockets.mixins.amqp.Client._reconnect') as reconnect:
+        with mock.patch('sprockets.mixins.amqp.Client._reconnect') \
+                as reconnect:
             self.client.on_connection_closed(
                 self.client.connection, 400, 'You Done Goofed')
             reconnect.assert_called_once()
@@ -237,6 +238,7 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
         self.assertTrue(self.client.connecting)
         with mock.patch.object(self.client, '_reconnect') as reconnect:
             self.client.on_connection_open_error(
-                self.connection, exceptions.AMQPConnectionError('200', 'Error'))
+                self.connection,
+                exceptions.AMQPConnectionError('200', 'Error'))
             reconnect.assert_called_once()
         self.assertTrue(self.client.closed)

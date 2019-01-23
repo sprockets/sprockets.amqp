@@ -20,8 +20,8 @@ https://pythonhosted.org/sprockets.mixins.amqp
 
 Requirements
 ------------
-- pika>=0.10.0
-- tornado>=4.2.0
+- pika==0.11.0
+- tornado>=4.2.0,,<5.0.0
 
 Example
 -------

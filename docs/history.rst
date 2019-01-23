@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`2.1.3`_ Jan 23, 2019
+---------------------
+- Pin pika to 0.11.0
+
 `2.1.2`_ May 3, 2017
 --------------------
 - Move setting default properties up one level to allow access when not ready
@@ -64,7 +68,8 @@ Version History
 ----------------------
  - Initial implementation
 
-.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.1.2...HEAD
+.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.1.3...HEAD
+.. _2.1.3: https://github.com/sprockets/sprockets.amqp/compare/2.1.2...2.1.3
 .. _2.1.2: https://github.com/sprockets/sprockets.amqp/compare/2.1.1...2.1.2
 .. _2.1.1: https://github.com/sprockets/sprockets.amqp/compare/2.1.0...2.1.1
 .. _2.1.0: https://github.com/sprockets/sprockets.amqp/compare/2.0.0...2.1.0

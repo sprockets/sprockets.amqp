@@ -31,7 +31,7 @@ except ImportError:  # pragma: nocover
     concurrent, ioloop, exceptions, pika = \
         object(), object(), object(), object()
 
-__version__ = '2.1.2'
+__version__ = '2.1.3'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -602,7 +602,6 @@ class Client(object):
             self.state = self.STATE_BLOCKED
             if self.on_unavailable:
                 self.on_unavailable(self)
-
 
 
 class AMQPException(Exception):

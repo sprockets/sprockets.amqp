@@ -78,8 +78,10 @@ class InstallEnvironTestCase(base.AsyncHTTPTestCase):
         self.assertEqual(self._app.amqp.parameters.host, 'test-host')
         self.assertEqual(self._app.amqp.parameters.port, 5671)
         self.assertEqual(self._app.amqp.parameters.virtual_host, 'test')
-        self.assertEqual(self._app.amqp.parameters.credentials.username, 'test')
-        self.assertEqual(self._app.amqp.parameters.credentials.password, 'user')
+        self.assertEqual(self._app.amqp.parameters.credentials.username,
+                         'test')
+        self.assertEqual(self._app.amqp.parameters.credentials.password,
+                         'user')
 
     def test_confirmations_true_amqp_prefix(self):
         os.environ['AMQP_CONFIRMATIONS'] = 'True'
@@ -146,4 +148,3 @@ class InstallValueErrorTestCase(base.AsyncHTTPTestCase):
     def test_reconnect_delay_when_zero(self):
         with self.assertRaises(ValueError):
             self.install(reconnect_delay=0)
-
