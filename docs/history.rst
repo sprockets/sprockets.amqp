@@ -1,6 +1,11 @@
 Version History
 ===============
 
+`2.1.4`_ Jan 24, 2019
+---------------------
+- Pin pika to 0.12.0, 0.11.0 has issues with Python 3.7
+
+
 `2.1.3`_ Jan 23, 2019
 ---------------------
 - Pin pika to 0.11.0
