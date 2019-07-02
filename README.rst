@@ -18,10 +18,16 @@ Documentation
 -------------
 https://pythonhosted.org/sprockets.mixins.amqp
 
+Python Compatibility
+--------------------
+- python 3.5
+- python 3.6
+- python 3.7
+
 Requirements
 ------------
-- pika==0.11.0
-- tornado>=4.2.0,,<5.0.0
+- pika==0.12.0
+- tornado>=4.2,<6
 
 Example
 -------
@@ -96,6 +102,16 @@ Any environment variables set will override the corresponding AMQP settings pass
 Source
 ------
 ``sprockets.mixins.amqp`` source is available on Github at `https://github.com/sprockets/sprockets.mixins.amqp <https://github.com/sprockets/sprockets.mixins.amqp>`_
+
+Running Tests Locally
+---------------------
+
+You'll need to have python 3.7 installed, and RabbitMQ installed locally running on port 5672 of localhost.
+
+-- $ python3.7 -m venv env
+-- $ env/bin/activate
+-- (env) $ pip install -r requires/testing.txt
+-- (env) $ nosetests
 
 License
 -------

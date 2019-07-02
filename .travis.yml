@@ -1,20 +1,18 @@
 sudo: false
 language: python
 python:
-- 2.7
-- pypy
-- 3.4
 - 3.5
 - 3.6
+- 3.7
 services:
 - rabbitmq
 install:
 - pip install -r requires/testing.txt -r docs/requirements.txt codecov
 script:
 - nosetests
-- ./setup.py build_sphinx
 after_success:
 - codecov
+- ./setup.py build_sphinx
 deploy:
   provider: pypi
   user: sprockets
@@ -22,7 +20,6 @@ deploy:
   password:
     secure: IJVu1MUk2NtRprWkYL+prPRbWrDdSiP+L06S6xERqYnu+fy1ez8/zODazkQGKagXAAujbJK8OwyCgoMzCGDNHV3/NfFtz9dirGVAD2rXZ6AVfHjtEh31L2b2YzXEK0EnBMRsYRjsqLva6q7tfxzjMWKFria25wsd9bN8VlofNDQ=
   on:
-    python: 3.5
+    python: 3.7
     tags: true
-    all_branches: true
     repo: sprockets/sprockets.mixins.amqp
