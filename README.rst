@@ -18,10 +18,16 @@ Documentation
 -------------
 https://pythonhosted.org/sprockets.mixins.amqp
 
+Python Compatibility
+--------------------
+- python 3.5
+- python 3.6
+- python 3.7
+
 Requirements
 ------------
-- pika==0.11.0
-- tornado>=4.2.0,,<5.0.0
+- pika==0.12.0
+- tornado>=5.0,<6.0.
 
 Example
 -------
