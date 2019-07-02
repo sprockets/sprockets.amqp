@@ -27,7 +27,7 @@ Python Compatibility
 Requirements
 ------------
 - pika==0.12.0
-- tornado>=4.2,<6.0.
+- tornado>=4.2,<6
 
 Example
 -------
