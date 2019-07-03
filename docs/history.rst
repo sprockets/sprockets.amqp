@@ -1,10 +1,14 @@
 Version History
 ===============
 
+`2.1.5`_ July 3, 2019
+---------------------
+- Remove official support for python versions less than 3.5
+- Add support for tornado 5.X releases
+
 `2.1.4`_ Jan 24, 2019
 ---------------------
 - Pin pika to 0.12.0, 0.11.0 has issues with Python 3.7
-
 
 `2.1.3`_ Jan 23, 2019
 ---------------------
@@ -73,7 +77,9 @@ Version History
 ----------------------
  - Initial implementation
 
-.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.1.3...HEAD
+.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.1.5...HEAD
+.. _2.1.5: https://github.com/sprockets/sprockets.amqp/compare/2.1.4...2.1.5
+.. _2.1.4: https://github.com/sprockets/sprockets.amqp/compare/2.1.3...2.1.4
 .. _2.1.3: https://github.com/sprockets/sprockets.amqp/compare/2.1.2...2.1.3
 .. _2.1.2: https://github.com/sprockets/sprockets.amqp/compare/2.1.1...2.1.2
 .. _2.1.1: https://github.com/sprockets/sprockets.amqp/compare/2.1.0...2.1.1
