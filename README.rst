@@ -22,7 +22,7 @@ Python Compatibility
 --------------------
 - python 3.5
 - python 3.6
-- python 3.7 (currently untested in travis-ci).
+- python 3.7
 
 Requirements
 ------------
@@ -106,11 +106,12 @@ Source
 Running Tests Locally
 ---------------------
 
-You'll need to have python 3.7 installed, and RabbitMQ installed locally running on port 5672 of localhost.
+You'll need to have python 3.7 installed.
 
 -- $ python3.7 -m venv env
 -- $ env/bin/activate
 -- (env) $ pip install -r requires/testing.txt
+-- (env) $ ./bootstrap.sh
 -- (env) $ nosetests
 
 License

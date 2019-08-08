@@ -1,16 +1,18 @@
 sudo: false
 language: python
-dist: trusty
+dist: xenial
 python:
 - 3.5
 - 3.6
 - 3.7
 services:
-- docker
+- rabbitmq
+addons:
+  apt:
+    packages:
+      - rabbitmq-server
 install:
 - pip install -r requires/testing.txt -r docs/requirements.txt codecov
-before_script:
-- ./bootstrap.sh
 script:
 - nosetests
 after_success:
@@ -23,6 +25,6 @@ deploy:
   password:
     secure: IJVu1MUk2NtRprWkYL+prPRbWrDdSiP+L06S6xERqYnu+fy1ez8/zODazkQGKagXAAujbJK8OwyCgoMzCGDNHV3/NfFtz9dirGVAD2rXZ6AVfHjtEh31L2b2YzXEK0EnBMRsYRjsqLva6q7tfxzjMWKFria25wsd9bN8VlofNDQ=
   on:
-    python: 3.6
+    python: 3.7
     tags: true
     repo: sprockets/sprockets.mixins.amqp
