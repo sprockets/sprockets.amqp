@@ -1,6 +1,11 @@
 Version History
 ===============
 
+`2.2.0`_ Aug 8, 2019
+---------------------
+- Fix issue opening a channel is not checking if the conn is still open
+- Fix issue with publishing confirmation bookkeeping not reset when channel is reopened
+
 `2.1.5`_ July 3, 2019
 ---------------------
 - Remove official support for python versions less than 3.5

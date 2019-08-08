@@ -407,6 +407,9 @@ class Client(object):
 
         """
         LOGGER.debug('Creating a new channel')
+        if not self.connection.is_open:
+            LOGGER.info('Channel connection is closed, waiting for reconnect')
+            return
         return self.connection.channel(self.on_channel_open)
 
     def _reconnect(self):
@@ -548,6 +551,8 @@ class Client(object):
         LOGGER.debug('Channel opened')
         self.channel = channel
         if self.publisher_confirmations:
+            self.messages.clear()
+            self.message_number = 0
             self.channel.confirm_delivery(self.on_delivery_confirmation)
         self.channel.add_on_close_callback(self.on_channel_closed)
         self.channel.add_on_flow_callback(self.on_channel_flow)
@@ -571,9 +576,10 @@ class Client(object):
         :param str reply_text: The text reason the channel was closed
 
         """
+        LOGGER.debug('Channel is closed')
         for future in self.messages.values():
             future.set_exception(AMQPException(reply_code, reply_text))
-        self.messages = {}
+
         if self.closing:
             LOGGER.debug('Channel %s was intentionally closed (%s) %s',
                          channel, reply_code, reply_text)

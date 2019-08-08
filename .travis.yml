@@ -4,10 +4,13 @@ dist: trusty
 python:
 - 3.5
 - 3.6
+- 3.7
 services:
-- rabbitmq
+- docker
 install:
 - pip install -r requires/testing.txt -r docs/requirements.txt codecov
+before_script:
+- ./bootstrap.sh
 script:
 - nosetests
 after_success:

@@ -4,6 +4,7 @@ import mock
 from pika import exceptions, frame, spec
 
 from sprockets.mixins import amqp
+from tornado import concurrent
 
 from . import base
 
@@ -242,3 +243,23 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
                 exceptions.AMQPConnectionError('200', 'Error'))
             reconnect.assert_called_once()
         self.assertTrue(self.client.closed)
+
+    def test_open_channel_when_connection_is_opened(self):
+        self.client.connection.is_open = True
+        self.client._open_channel()
+        self.assertEqual(self.client.connection.channel.call_count, 1)
+
+    def test_open_channel_when_connection_is_not_opened(self):
+        self.client.connection.is_open = False
+        self.client._open_channel()
+        self.assertEqual(self.client.connection.channel.call_count, 0)
+
+    def test_on_channel_open_reset_confirmation_bookkeeping(self):
+        self.client.message_number = 2
+        self.client.messages = {1: concurrent.Future(), 2: concurrent.Future()}
+        self.client.state = amqp.Client.STATE_CONNECTING
+        self.assertTrue(self.client.connecting)
+        self.client.on_channel_open(self.client.channel)
+        self.assertEqual(self.client.message_number, 0)
+        self.assertEqual(self.client.messages, {})
+        self.assertEqual(self.client.channel.confirm_delivery.call_count, 1)
