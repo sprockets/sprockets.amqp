@@ -5,6 +5,8 @@ Version History
 ---------------------
 - Fix issue opening a channel is not checking if the conn is still open
 - Fix issue with publishing confirmation bookkeeping not reset when channel is reopened
+- Add bootstrap and docker-compose instead of using local rabbitmq
+- Update CI to run bootstrap before tests
 
 `2.1.5`_ July 3, 2019
 ---------------------
@@ -82,7 +84,8 @@ Version History
 ----------------------
  - Initial implementation
 
-.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.1.5...HEAD
+.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.2.0...HEAD
+.. _2.2.0: https://github.com/sprockets/sprockets.amqp/compare/2.1.5...2.2.0
 .. _2.1.5: https://github.com/sprockets/sprockets.amqp/compare/2.1.4...2.1.5
 .. _2.1.4: https://github.com/sprockets/sprockets.amqp/compare/2.1.3...2.1.4
 .. _2.1.3: https://github.com/sprockets/sprockets.amqp/compare/2.1.2...2.1.3

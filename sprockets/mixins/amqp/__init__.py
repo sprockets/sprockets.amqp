@@ -31,7 +31,7 @@ except ImportError:  # pragma: nocover
     concurrent, ioloop, exceptions, pika = \
         object(), object(), object(), object()
 
-__version__ = '2.1.5'
+__version__ = '2.2.0'
 
 LOGGER = logging.getLogger(__name__)
 
