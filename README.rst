@@ -106,7 +106,7 @@ Source
 Running Tests Locally
 ---------------------
 
-You'll need to have python 3.7 installed.
+You'll need to have python 3.7, Docker and Docker Compose installed.
 
 -- $ python3.7 -m venv env
 -- $ env/bin/activate
