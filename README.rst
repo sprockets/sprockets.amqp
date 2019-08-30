@@ -8,7 +8,7 @@ Installation
 ------------
 ``sprockets.mixins.amqp`` is available on the
 `Python Package Index <https://pypi.python.org/pypi/sprockets.mixins.amqp>`_
-and can be installed via ``pip`` or ``easy_install``:
+and can be installed via ``pip``:
 
 .. code-block:: bash
 
@@ -16,7 +16,8 @@ and can be installed via ``pip`` or ``easy_install``:
 
 Documentation
 -------------
-https://pythonhosted.org/sprockets.mixins.amqp
+
+https://sprocketsamqp.readthedocs.io
 
 Python Compatibility
 --------------------
@@ -130,5 +131,5 @@ License
 .. |Downloads| image:: https://pypip.in/d/sprockets.mixins.amqp/badge.svg?
    :target: https://pypi.python.org/pypi/sprockets.mixins.amqp
 
-.. |Docs| image:: https://img.shields.io/badge/docs-pythonhosted-green.svg
-   :target: https://pythonhosted.com/sprockets.mixins.amqp
+.. |Docs| image:: https://img.shields.io/readthedocs/sprocketsamqp
+   :target: https://sprocketsamqp.readthedocs.io
