@@ -1,8 +1,12 @@
 Version History
 ===============
 
-`2.2.0`_ Aug 8, 2019
+`2.2.1`_ Nov 13, 2019
 ---------------------
+- Include pin for Tornado 6
+
+`2.2.0`_ Aug 8, 2019
+--------------------
 - Fix issue opening a channel is not checking if the conn is still open
 - Fix issue with publishing confirmation bookkeeping not reset when channel is reopened
 - Add bootstrap and docker-compose instead of using local rabbitmq
