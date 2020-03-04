@@ -21,14 +21,14 @@ https://sprocketsamqp.readthedocs.io
 
 Python Compatibility
 --------------------
-- python 3.5
 - python 3.6
 - python 3.7
+- python 3.8
 
 Requirements
 ------------
-- pika==0.12.0
-- tornado>=4.2,<6
+- pika==0.13.1
+- tornado>=6,<7
 
 Example
 -------
@@ -69,10 +69,9 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
                         correlation.HandlerMixin,
                         web.RequestHandler):
 
-       @gen.coroutine
-       def get(self, *args, **kwargs):
+       async def get(self, *args, **kwargs):
            body = {'request': self.request.path, 'args': args, 'kwargs': kwargs}
-           yield self.amqp_publish(
+           await self.amqp_publish(
                'exchange',
                'routing.key',
                json.dumps(body),

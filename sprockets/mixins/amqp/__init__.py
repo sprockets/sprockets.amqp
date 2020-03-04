@@ -99,7 +99,7 @@ def install(application, io_loop=None, **kwargs):
     return True
 
 
-class PublishingMixin(object):
+class PublishingMixin:
     """This mixin adds publishing messages to RabbitMQ. It uses a
     persistent connection and channel opened when the application
     start up and automatically reopened if closed by RabbitMQ
@@ -127,7 +127,7 @@ class PublishingMixin(object):
             exchange, routing_key, body, properties)
 
 
-class Client(object):
+class Client:
     """This class encompasses all of the AMQP/RabbitMQ specific behaviors.
 
     If RabbitMQ closes the connection, it will reopen it. You should

@@ -1,7 +1,4 @@
 coverage
 flake8
 nose
-mock
-setuptools_scm==3.3.3
-pylint
 -r installation.txt
