@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 import uuid
 
 from pika import spec
@@ -21,7 +22,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     CONFIRMATIONS = True
 
     def setUp(self):
-        super(AsyncHTTPTestCase, self).setUp()
+        super().setUp()
         self.correlation_id = str(uuid.uuid4())
         self.exchange = str(uuid.uuid4())
         self.get_delivered_message = concurrent.Future()
@@ -34,6 +35,18 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
             'enable_confirmations': self.CONFIRMATIONS,
             'on_return_callback': self.on_message_returned,
             'url': 'amqp://guest:guest@127.0.0.1:5672/%2f'})
+
+        def ready_check():
+            if self._app.amqp.ready:
+                sys.stdout.write('Application startup complete\n')
+                sys.stdout.flush()
+                self.io_loop.stop()
+            else:
+                self.io_loop.call_later(1, ready_check)
+
+        sys.stdout.write('Waiting for application to start\n')
+        sys.stdout.flush()
+        self.io_loop.add_callback(ready_check)
         self.io_loop.start()
 
     def get_app(self):
@@ -77,13 +90,13 @@ class PublisherTestCase(AsyncHTTPTestCase):
     CONFIRMATIONS = False
 
     @testing.gen_test
-    def test_full_execution(self):
-        response = yield self.http_client.fetch(
+    async def test_full_execution(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange={}&routing_key={}'.format(
                 self.exchange, self.routing_key)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        delivered = yield self.get_delivered_message
+        delivered = await self.get_delivered_message
         self.assertIsInstance(delivered[0], spec.Basic.Deliver)
         self.assertEqual(delivered[1].correlation_id, self.correlation_id)
         self.assertEqual(delivered[2].decode('utf-8'), published['body'])
@@ -92,20 +105,20 @@ class PublisherTestCase(AsyncHTTPTestCase):
 class PublisherConfirmationTestCase(AsyncHTTPTestCase):
 
     @testing.gen_test
-    def test_full_execution(self):
-        response = yield self.http_client.fetch(
+    async def test_full_execution(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange={}&routing_key={}'.format(
                 self.exchange, self.routing_key)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        delivered = yield self.get_delivered_message
+        delivered = await self.get_delivered_message
         self.assertIsInstance(delivered[0], spec.Basic.Deliver)
         self.assertEqual(delivered[1].correlation_id, self.correlation_id)
         self.assertEqual(delivered[2].decode('utf-8'), published['body'])
 
     @testing.gen_test
-    def test_publishing_exchange_failure(self):
-        response = yield self.http_client.fetch(
+    async def test_publishing_exchange_failure(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange=fail&routing_key=error'),
             headers={'Correlation-Id': self.correlation_id})
         result = json.loads(response.body.decode('utf-8'))
@@ -116,13 +129,13 @@ class PublisherConfirmationTestCase(AsyncHTTPTestCase):
         self.assertEqual(result['type'], 'AMQPException')
 
     @testing.gen_test
-    def test_published_message_returned(self):
-        response = yield self.http_client.fetch(
+    async def test_published_message_returned(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange={}&routing_key=error'.format(
                  self.exchange)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        returned = yield self.get_returned_message
+        returned = await self.get_returned_message
         self.assertEqual(returned[0].exchange, self.exchange)
         self.assertEqual(returned[0].reply_code, 312)
         self.assertEqual(returned[0].reply_text, 'NO_ROUTE')
