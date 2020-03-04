@@ -5,7 +5,7 @@ import uuid
 from unittest import mock
 
 from pika import frame, spec
-from tornado import gen, testing, web
+from tornado import testing, web
 
 from sprockets.mixins import amqp
 
