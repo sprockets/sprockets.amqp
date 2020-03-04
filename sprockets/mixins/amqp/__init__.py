@@ -16,20 +16,21 @@ The ``AMQP``` prefix is interchangeable with ``RABBITMQ``. For example, you can
 use ``AMQP_URL`` or ``RABBITMQ_URL``.
 
 """
-import os
 import logging
+import os
 import sys
 import time
 import uuid
 
 try:
-    from tornado import concurrent, ioloop
-    from pika import exceptions
     import pika
+    from pika import exceptions
+    from pika.adapters import tornado_connection
+    from tornado import concurrent, ioloop
 except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
-    concurrent, ioloop, exceptions, pika = \
-        object(), object(), object(), object()
+    concurrent, ioloop, exceptions, pika, tornado_connection = \
+        object(), object(), object(), object(), object()
 
 __version__ = '3.0.0'
 
@@ -380,7 +381,7 @@ class Client(object):
             raise ConnectionStateError(self.state_description)
         LOGGER.debug('Connecting to %s', self.url)
         self.state = self.STATE_CONNECTING
-        self.connection = pika.TornadoConnection(
+        self.connection = tornado_connection.TornadoConnection(
             parameters=self.parameters,
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,
