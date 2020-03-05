@@ -21,7 +21,6 @@ https://sprocketsamqp.readthedocs.io
 
 Python Compatibility
 --------------------
-- python 3.6
 - python 3.7
 - python 3.8
 
@@ -112,7 +111,7 @@ You'll need to have python 3.7, Docker and Docker Compose installed.
 -- $ env/bin/activate
 -- (env) $ pip install -r requires/testing.txt
 -- (env) $ ./bootstrap.sh
--- (env) $ nosetests
+-- (env) $ coverage run && coverage report
 
 License
 -------

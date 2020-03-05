@@ -3,11 +3,12 @@ Version History
 
 `3.0.0`_ Mar 5, 2020
 --------------------
-- Drop Python 3.5 support
+- Drop Python 3.5 & 3.6 support
 - Add Python 3.8 support
 - Bump Tornado to >= 6, <7
 - Pin pika to 0.13.1
 - Update tests to use async def/wait
+- Switch to using unittest for test runner instead of nose
 
 `2.2.0`_ Aug 8, 2019
 --------------------
