@@ -7,14 +7,14 @@ from pika import spec
 from tornado import concurrent, locks, testing, web
 
 from sprockets.mixins import amqp
-
-from . import base
+from tests import base
 
 LOGGER = logging.getLogger(__name__)
 
 
 def setUpModule():
-    logging.getLogger('pika').setLevel(logging.INFO)
+    logging.getLogger('pika').setLevel(logging.ERROR)
+    logging.getLogger('sprockets.mixins.amqp').setLevel(logging.ERROR)
 
 
 class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
@@ -36,18 +36,27 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
             'on_return_callback': self.on_message_returned,
             'url': 'amqp://guest:guest@127.0.0.1:5672/%2f'})
 
-        def ready_check():
+        def wait_on_ready():
             if self._app.amqp.ready:
-                sys.stdout.write('Application startup complete\n')
-                sys.stdout.flush()
                 self.io_loop.stop()
             else:
-                self.io_loop.call_later(1, ready_check)
+                self.io_loop.call_later(0.1, wait_on_ready)
 
-        sys.stdout.write('Waiting for application to start\n')
         sys.stdout.flush()
-        self.io_loop.add_callback(ready_check)
+        self.io_loop.add_callback(wait_on_ready)
         self.io_loop.start()
+
+    def tearDown(self):
+        def shutdown():
+            if self._app.amqp.closed:
+                self.io_loop.stop()
+            elif not self._app.amqp.closing:
+                self._app.amqp.close()
+            self.io_loop.call_later(0.1, shutdown)
+
+        self.io_loop.add_callback(shutdown)
+        self.io_loop.start()
+        super().tearDown()
 
     def get_app(self):
         return web.Application(
@@ -124,7 +133,7 @@ class PublisherConfirmationTestCase(AsyncHTTPTestCase):
         result = json.loads(response.body.decode('utf-8'))
         self.assertEqual(
             result['error'],
-            "AMQP Exception (404): NOT_FOUND - "
+            'AMQP Exception (404): NOT_FOUND - '
             "no exchange 'fail' in vhost '/'")
         self.assertEqual(result['type'], 'AMQPException')
 
