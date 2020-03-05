@@ -6,13 +6,14 @@ AMQP Publishing Mixin for Tornado RequestHandlers.
 
 Installation
 ------------
+
 ``sprockets.mixins.amqp`` is available on the
 `Python Package Index <https://pypi.python.org/pypi/sprockets.mixins.amqp>`_
 and can be installed via ``pip``:
 
 .. code-block:: bash
 
-   pip install sprockets.mixins.amqp
+   pip3 install sprockets.mixins.amqp
 
 Documentation
 -------------
@@ -21,13 +22,15 @@ https://sprocketsamqp.readthedocs.io
 
 Python Compatibility
 --------------------
-- python 3.7
-- python 3.8
+
+- Python 3.7
+- Python 3.8
 
 Requirements
 ------------
-- pika==0.13.1
-- tornado>=6,<7
+
+- Pika==0.13.1
+- Tornado>=6,<7
 
 Example
 -------
@@ -93,10 +96,10 @@ Environment Variables
 ^^^^^^^^^^^^^^^^^^^^^
 Any environment variables set will override the corresponding AMQP settings passed into install()
 
-- AMQP_URL
-- AMQP_TIMEOUT
-- AMQP_RECONNECT_DELAY
-- AMQP_CONNECTION_ATTEMPTS
+- ``AMQP_URL``
+- ``AMQP_TIMEOUT``
+- ``AMQP_RECONNECT_DELAY``
+- ``AMQP_CONNECTION_ATTEMPTS``
 
 Source
 ------
@@ -107,11 +110,13 @@ Running Tests Locally
 
 You'll need to have python 3.7, Docker and Docker Compose installed.
 
--- $ python3.7 -m venv env
--- $ env/bin/activate
--- (env) $ pip install -r requires/testing.txt
--- (env) $ ./bootstrap.sh
--- (env) $ coverage run && coverage report
+.. code:: bash
+
+  $ python3 -m venv env
+  $ env/bin/activate
+  (env) $ pip3 install -r requires/testing.txt
+  (env) $ ./bootstrap.sh
+  (env) $ coverage run && coverage report
 
 License
 -------
