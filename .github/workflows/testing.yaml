@@ -24,8 +24,8 @@ jobs:
           - 15672
     env:
       AMQP_EXCHANGE: amq.topic
-      AMQP_URL: amqp://guest:guest@rabbitmq:${{ job.services.rabbitmq.ports['5672'] }}/%2f
-      RABBIMQ_URL: http://guest:guest@rabbitmq:${{ job.services.rabbitmq.ports['15672'] }}
+      AMQP_URL: amqp://guest:guest@rabbitmq:${{ test.services.rabbitmq.ports['5672'] }}/%2f
+      RABBIMQ_URL: http://guest:guest@rabbitmq:${{ test.services.rabbitmq.ports['15672'] }}
     strategy:
       matrix:
         python: [3.7, 3.8]
