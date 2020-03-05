@@ -2,7 +2,7 @@ sprockets.mixins.amqp
 =====================
 AMQP Publishing Mixin for Tornado RequestHandlers.
 
-|Version| |Downloads| |Travis| |CodeCov| |Docs|
+|Version| |Downloads| |Status| |CodeCov| |Docs|
 
 Installation
 ------------
@@ -120,8 +120,9 @@ License
 .. |Version| image:: https://badge.fury.io/py/sprockets.mixins.amqp.svg?
    :target: http://badge.fury.io/py/sprockets.mixins.amqp
 
-.. |Travis| image:: https://travis-ci.org/sprockets/sprockets.mixins.amqp.svg?branch=master
-   :target: https://travis-ci.org/sprockets/sprockets.mixins.amqp
+.. |Status| image:: https://github.com/gmr/aiorabbit/workflows/Testing/badge.svg?
+   :target: https://github.com/gmr/aiorabbit/actions?workflow=Testing
+   :alt: Build Status
 
 .. |CodeCov| image:: http://codecov.io/github/sprockets/sprockets.mixins.amqp/coverage.svg?branch=master
    :target: https://codecov.io/github/sprockets/sprockets.mixins.amqp?branch=master
