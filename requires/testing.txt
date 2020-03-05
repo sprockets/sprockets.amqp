@@ -1,7 +1,10 @@
 coverage
 flake8
-nose
-mock
-setuptools_scm==3.3.3
-pylint
+flake8-comprehensions
+flake8-deprecated
+flake8-import-order
+flake8-print
+flake8-quotes
+flake8-rst-docstrings
+flake8-tuple
 -r installation.txt

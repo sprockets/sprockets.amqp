@@ -1,19 +1,30 @@
 import json
 import logging
+import os
+import sys
 import uuid
 
 from pika import spec
 from tornado import concurrent, locks, testing, web
 
 from sprockets.mixins import amqp
-
-from . import base
+from tests import base
 
 LOGGER = logging.getLogger(__name__)
 
 
 def setUpModule():
-    logging.getLogger('pika').setLevel(logging.INFO)
+    try:
+        with open('build/test-environment') as f:
+            for line in f:
+                if line.startswith('export '):
+                    line = line[7:]
+                name, _, value = line.strip().partition('=')
+                os.environ[name] = value
+    except IOError:
+        pass
+    logging.getLogger('pika').setLevel(logging.ERROR)
+    logging.getLogger('sprockets.mixins.amqp').setLevel(logging.ERROR)
 
 
 class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
@@ -21,7 +32,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     CONFIRMATIONS = True
 
     def setUp(self):
-        super(AsyncHTTPTestCase, self).setUp()
+        super().setUp()
         self.correlation_id = str(uuid.uuid4())
         self.exchange = str(uuid.uuid4())
         self.get_delivered_message = concurrent.Future()
@@ -33,8 +44,29 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
             'on_ready_callback': self.on_amqp_ready,
             'enable_confirmations': self.CONFIRMATIONS,
             'on_return_callback': self.on_message_returned,
-            'url': 'amqp://guest:guest@127.0.0.1:5672/%2f'})
+            'url': os.environ['AMQP_URL']})
+
+        def wait_on_ready():
+            if self._app.amqp.ready:
+                self.io_loop.stop()
+            else:
+                self.io_loop.call_later(0.1, wait_on_ready)
+
+        sys.stdout.flush()
+        self.io_loop.add_callback(wait_on_ready)
         self.io_loop.start()
+
+    def tearDown(self):
+        def shutdown():
+            if self._app.amqp.closed:
+                self.io_loop.stop()
+            elif not self._app.amqp.closing:
+                self._app.amqp.close()
+            self.io_loop.call_later(0.1, shutdown)
+
+        self.io_loop.add_callback(shutdown)
+        self.io_loop.start()
+        super().tearDown()
 
     def get_app(self):
         return web.Application(
@@ -77,13 +109,13 @@ class PublisherTestCase(AsyncHTTPTestCase):
     CONFIRMATIONS = False
 
     @testing.gen_test
-    def test_full_execution(self):
-        response = yield self.http_client.fetch(
+    async def test_full_execution(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange={}&routing_key={}'.format(
                 self.exchange, self.routing_key)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        delivered = yield self.get_delivered_message
+        delivered = await self.get_delivered_message
         self.assertIsInstance(delivered[0], spec.Basic.Deliver)
         self.assertEqual(delivered[1].correlation_id, self.correlation_id)
         self.assertEqual(delivered[2].decode('utf-8'), published['body'])
@@ -92,37 +124,37 @@ class PublisherTestCase(AsyncHTTPTestCase):
 class PublisherConfirmationTestCase(AsyncHTTPTestCase):
 
     @testing.gen_test
-    def test_full_execution(self):
-        response = yield self.http_client.fetch(
+    async def test_full_execution(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange={}&routing_key={}'.format(
                 self.exchange, self.routing_key)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        delivered = yield self.get_delivered_message
+        delivered = await self.get_delivered_message
         self.assertIsInstance(delivered[0], spec.Basic.Deliver)
         self.assertEqual(delivered[1].correlation_id, self.correlation_id)
         self.assertEqual(delivered[2].decode('utf-8'), published['body'])
 
     @testing.gen_test
-    def test_publishing_exchange_failure(self):
-        response = yield self.http_client.fetch(
+    async def test_publishing_exchange_failure(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange=fail&routing_key=error'),
             headers={'Correlation-Id': self.correlation_id})
         result = json.loads(response.body.decode('utf-8'))
         self.assertEqual(
             result['error'],
-            "AMQP Exception (404): NOT_FOUND - "
+            'AMQP Exception (404): NOT_FOUND - '
             "no exchange 'fail' in vhost '/'")
         self.assertEqual(result['type'], 'AMQPException')
 
     @testing.gen_test
-    def test_published_message_returned(self):
-        response = yield self.http_client.fetch(
+    async def test_published_message_returned(self):
+        response = await self.http_client.fetch(
             self.get_url('/?exchange={}&routing_key=error'.format(
                  self.exchange)),
             headers={'Correlation-Id': self.correlation_id})
         published = json.loads(response.body.decode('utf-8'))
-        returned = yield self.get_returned_message
+        returned = await self.get_returned_message
         self.assertEqual(returned[0].exchange, self.exchange)
         self.assertEqual(returned[0].reply_code, 312)
         self.assertEqual(returned[0].reply_text, 'NO_ROUTE')

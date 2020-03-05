@@ -1,0 +1,61 @@
+name: Testing
+on:
+  push:
+    branches: ["*"]
+    paths-ignore:
+      - 'docs/**'
+      - 'setup.*'
+      - '*.md'
+      - '*.rst'
+    tags-ignore: ["*"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      rabbitmq:
+        image: rabbitmq:3.8
+        options: >-
+          --health-cmd "/opt/rabbitmq/sbin/rabbitmqctl node_health_check"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 5
+        ports:
+          - 5672:5672
+          - 15672:15672
+    env:
+      AMQP_EXCHANGE: amq.topic
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/%2f
+      RABBIMQ_URL: http://guest:guest@rabbitmq:15672
+    strategy:
+      matrix:
+        python: [3.7, 3.8]
+    container:
+      image: python:${{ matrix.python }}-alpine
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install testing dependencies
+        run: pip3 install -r requires/testing.txt
+
+      - name: Install library dependencies
+        run: python3 setup.py develop
+
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Run flake8 tests
+        run: flake8 --output build/flake8.txt --tee
+
+      - name: Run tests
+        run: coverage run
+
+      - name: Generate reports
+        run: coverage xml && coverage report
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v1.0.2
+        if: github.repository == 'sprockets/sprockets.mixins.amqp'
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          file: build/coverage.xml

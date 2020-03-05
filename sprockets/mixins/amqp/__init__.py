@@ -3,35 +3,35 @@ handler, with methods to speed the development of publishing RabbitMQ messages.
 
 Configured using the following environment variables:
 
-    ``AMQP_URL`` - The AMQP URL to connect to.
-    ``AMQP_TIMEOUT`` - The optional maximum time to wait for a bad state
-                       to resolve before treating the failure as
-                       persistent.
-    ``AMQP_RECONNECT_DELAY`` - The optional time in seconds to wait before
-                               reconnecting on connection failure.
-    ``AMQP_CONNECTION_ATTEMPTS`` - The optional number of connection
-                                   attempts to make before giving up.
+  - ``AMQP_URL`` - The AMQP URL to connect to.
+  - ``AMQP_TIMEOUT`` - The optional maximum time to wait for a bad state to
+    resolve before treating the failure as persistent.
+  - ``AMQP_RECONNECT_DELAY`` - The optional time in seconds to wait before
+    reconnecting on connection failure.
+  - ``AMQP_CONNECTION_ATTEMPTS`` - The optional number of connection attempts
+    to make before giving up.
 
 The ``AMQP``` prefix is interchangeable with ``RABBITMQ``. For example, you can
 use ``AMQP_URL`` or ``RABBITMQ_URL``.
 
 """
-import os
 import logging
+import os
 import sys
 import time
 import uuid
 
 try:
-    from tornado import concurrent, ioloop
-    from pika import exceptions
     import pika
+    from pika import exceptions
+    from pika.adapters import tornado_connection
+    from tornado import concurrent, ioloop
 except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
-    concurrent, ioloop, exceptions, pika = \
-        object(), object(), object(), object()
+    concurrent, ioloop, exceptions, pika, tornado_connection = \
+        object(), object(), object(), object(), object()
 
-__version__ = '2.2.0'
+__version__ = '3.0.0'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ def install(application, io_loop=None, **kwargs):
     return True
 
 
-class PublishingMixin(object):
+class PublishingMixin:
     """This mixin adds publishing messages to RabbitMQ. It uses a
     persistent connection and channel opened when the application
     start up and automatically reopened if closed by RabbitMQ
@@ -126,7 +126,7 @@ class PublishingMixin(object):
             exchange, routing_key, body, properties)
 
 
-class Client(object):
+class Client:
     """This class encompasses all of the AMQP/RabbitMQ specific behaviors.
 
     If RabbitMQ closes the connection, it will reopen it. You should
@@ -274,8 +274,8 @@ class Client(object):
                      confirmation_type, method_frame.method.delivery_tag)
 
         if method_frame.method.multiple:
-            confirmed = sorted([msg for msg in self.messages
-                                if msg <= method_frame.method.delivery_tag])
+            confirmed = sorted(msg for msg in self.messages
+                               if msg <= method_frame.method.delivery_tag)
         else:
             confirmed = [method_frame.method.delivery_tag]
 
@@ -380,7 +380,7 @@ class Client(object):
             raise ConnectionStateError(self.state_description)
         LOGGER.debug('Connecting to %s', self.url)
         self.state = self.STATE_CONNECTING
-        self.connection = pika.TornadoConnection(
+        self.connection = tornado_connection.TornadoConnection(
             parameters=self.parameters,
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,

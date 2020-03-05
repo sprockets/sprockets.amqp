@@ -2,14 +2,26 @@ import contextlib
 import logging
 import os
 import uuid
+from unittest import mock
 
-from tornado import gen, testing, web
-import mock
 from pika import frame, spec
+from tornado import testing, web
 
 from sprockets.mixins import amqp
 
 LOGGER = logging.getLogger(__name__)
+
+
+def setUpModule():
+    try:
+        with open('build/test-environment') as f:
+            for line in f:
+                if line.startswith('export '):
+                    line = line[7:]
+                name, _, value = line.strip().partition('=')
+                os.environ[name] = value
+    except IOError:
+        pass
 
 
 class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
@@ -17,8 +29,7 @@ class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
     def initialize(self):
         self.correlation_id = self.request.headers.get('Correlation-Id')
 
-    @gen.coroutine
-    def get(self, *args, **kwargs):
+    async def get(self, *args, **kwargs):
         LOGGER.debug('Handling Request %r', self.correlation_id)
         parameters = {
             'exchange': self.get_argument('exchange', str(uuid.uuid4())),
@@ -29,7 +40,7 @@ class RequestHandler(amqp.PublishingMixin, web.RequestHandler):
                 'message_id': str(uuid.uuid4()),
                 'type': 'test-message'}}
         try:
-            yield self.amqp_publish(**parameters)
+            await self.amqp_publish(**parameters)
         except amqp.AMQPException as error:
             self.write({'error': str(error),
                         'type': error.__class__.__name__,

@@ -1,12 +1,11 @@
 import logging
+from unittest import mock
 
-import mock
 from pika import exceptions, frame, spec
-
-from sprockets.mixins import amqp
 from tornado import concurrent
 
-from . import base
+from sprockets.mixins import amqp
+from tests import base
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,8 +15,8 @@ class ClientStateTestCase(base.AsyncHTTPTestCase):
     STATES = {'idle', 'connecting', 'ready', 'blocked', 'closing', 'closed'}
 
     def assert_other_states_false(self, current):
-        self.assertTrue(all([getattr(self.client, state) is False
-                             for state in self.STATES if state != current]))
+        self.assertTrue(all(getattr(self.client, state) is False
+                            for state in self.STATES if state != current))
 
     def test_idle(self):
         self.client.state = amqp.Client.STATE_IDLE

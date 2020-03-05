@@ -2,7 +2,7 @@ sprockets.mixins.amqp
 =====================
 AMQP Publishing Mixin for Tornado RequestHandlers.
 
-|Version| |Downloads| |Travis| |CodeCov| |Docs|
+|Version| |Downloads| |Status| |CodeCov| |Docs|
 
 Installation
 ------------
@@ -21,14 +21,13 @@ https://sprocketsamqp.readthedocs.io
 
 Python Compatibility
 --------------------
-- python 3.5
-- python 3.6
 - python 3.7
+- python 3.8
 
 Requirements
 ------------
-- pika==0.12.0
-- tornado>=4.2,<6
+- pika==0.13.1
+- tornado>=6,<7
 
 Example
 -------
@@ -69,10 +68,9 @@ This examples demonstrates the most basic usage of ``sprockets.mixins.amqp``
                         correlation.HandlerMixin,
                         web.RequestHandler):
 
-       @gen.coroutine
-       def get(self, *args, **kwargs):
+       async def get(self, *args, **kwargs):
            body = {'request': self.request.path, 'args': args, 'kwargs': kwargs}
-           yield self.amqp_publish(
+           await self.amqp_publish(
                'exchange',
                'routing.key',
                json.dumps(body),
@@ -113,7 +111,7 @@ You'll need to have python 3.7, Docker and Docker Compose installed.
 -- $ env/bin/activate
 -- (env) $ pip install -r requires/testing.txt
 -- (env) $ ./bootstrap.sh
--- (env) $ nosetests
+-- (env) $ coverage run && coverage report
 
 License
 -------
@@ -122,8 +120,9 @@ License
 .. |Version| image:: https://badge.fury.io/py/sprockets.mixins.amqp.svg?
    :target: http://badge.fury.io/py/sprockets.mixins.amqp
 
-.. |Travis| image:: https://travis-ci.org/sprockets/sprockets.mixins.amqp.svg?branch=master
-   :target: https://travis-ci.org/sprockets/sprockets.mixins.amqp
+.. |Status| image:: https://github.com/gmr/aiorabbit/workflows/Testing/badge.svg?
+   :target: https://github.com/gmr/aiorabbit/actions?workflow=Testing
+   :alt: Build Status
 
 .. |CodeCov| image:: http://codecov.io/github/sprockets/sprockets.mixins.amqp/coverage.svg?branch=master
    :target: https://codecov.io/github/sprockets/sprockets.mixins.amqp?branch=master

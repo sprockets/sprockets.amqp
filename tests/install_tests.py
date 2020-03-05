@@ -4,8 +4,7 @@ import os
 from tornado import web
 
 from sprockets.mixins import amqp
-
-from . import base
+from tests import base
 
 LOGGER = logging.getLogger(__name__)
 
