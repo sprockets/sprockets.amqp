@@ -4,8 +4,7 @@ import logging
 from pika import exceptions
 
 from sprockets.mixins import amqp
-
-from . import base
+from tests import base
 
 LOGGER = logging.getLogger(__name__)
 

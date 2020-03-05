@@ -3,14 +3,13 @@ handler, with methods to speed the development of publishing RabbitMQ messages.
 
 Configured using the following environment variables:
 
-    ``AMQP_URL`` - The AMQP URL to connect to.
-    ``AMQP_TIMEOUT`` - The optional maximum time to wait for a bad state
-                       to resolve before treating the failure as
-                       persistent.
-    ``AMQP_RECONNECT_DELAY`` - The optional time in seconds to wait before
-                               reconnecting on connection failure.
-    ``AMQP_CONNECTION_ATTEMPTS`` - The optional number of connection
-                                   attempts to make before giving up.
+  - ``AMQP_URL`` - The AMQP URL to connect to.
+  - ``AMQP_TIMEOUT`` - The optional maximum time to wait for a bad state to
+    resolve before treating the failure as persistent.
+  - ``AMQP_RECONNECT_DELAY`` - The optional time in seconds to wait before
+    reconnecting on connection failure.
+  - ``AMQP_CONNECTION_ATTEMPTS`` - The optional number of connection attempts
+    to make before giving up.
 
 The ``AMQP``` prefix is interchangeable with ``RABBITMQ``. For example, you can
 use ``AMQP_URL`` or ``RABBITMQ_URL``.
@@ -275,8 +274,8 @@ class Client:
                      confirmation_type, method_frame.method.delivery_tag)
 
         if method_frame.method.multiple:
-            confirmed = sorted([msg for msg in self.messages
-                                if msg <= method_frame.method.delivery_tag])
+            confirmed = sorted(msg for msg in self.messages
+                               if msg <= method_frame.method.delivery_tag)
         else:
             confirmed = [method_frame.method.delivery_tag]
 
