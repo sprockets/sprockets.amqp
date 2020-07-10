@@ -1,6 +1,10 @@
 Version History
 ===============
 
+`3.0.1`_ July 10, 2020
+----------------------
+- Exclude tests from being installed with package
+
 `3.0.0`_ Mar 5, 2020
 --------------------
 - Drop Python 3.5 & 3.6 support
@@ -93,7 +97,9 @@ Version History
 ----------------------
  - Initial implementation
 
-.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/2.2.0...HEAD
+.. _Next Release: https://github.com/sprockets/sprockets.amqp/compare/3.0.1...HEAD
+.. _3.0.1: https://github.com/sprockets/sprockets.amqp/compare/3.0.0...3.0.1
+.. _3.0.0: https://github.com/sprockets/sprockets.amqp/compare/2.2.0...3.0.0
 .. _2.2.0: https://github.com/sprockets/sprockets.amqp/compare/2.1.5...2.2.0
 .. _2.1.5: https://github.com/sprockets/sprockets.amqp/compare/2.1.4...2.1.5
 .. _2.1.4: https://github.com/sprockets/sprockets.amqp/compare/2.1.3...2.1.4
