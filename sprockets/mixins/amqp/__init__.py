@@ -25,11 +25,11 @@ import uuid
 try:
     import pika
     from pika import exceptions
-    from pika.adapters import tornado_connection
+    from pika.adapters import asyncio_connection
     from tornado import concurrent
 except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
-    concurrent, exceptions, pika, tornado_connection = \
+    concurrent, exceptions, pika, asyncio_connection = \
         object(), object(), object(), object(), object()
 
 __version__ = '3.0.1'
@@ -367,14 +367,14 @@ class Client:
         When the connection is established, the on_connection_open method
         will be invoked by pika.
 
-        :rtype: pika.TornadoConnection
+        :rtype: pika.AsyncioConnection
 
         """
         if not self.idle and not self.closed:
             raise ConnectionStateError(self.state_description)
         LOGGER.debug('Connecting to %s', self.url)
         self.state = self.STATE_CONNECTING
-        self.connection = tornado_connection.TornadoConnection(
+        self.connection = asyncio_connection.AsyncioConnection(
             parameters=self.parameters,
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,
@@ -426,7 +426,7 @@ class Client:
         """This method is called by pika once the connection to RabbitMQ has
         been established.
 
-        :type connection: pika.TornadoConnection
+        :type connection: pika.AsyncioConnection
 
         """
         LOGGER.debug('Connection opened')
@@ -440,7 +440,7 @@ class Client:
     def on_connection_open_error(self, connection, error):
         """Invoked if the connection to RabbitMQ can not be made.
 
-        :type connection: pika.TornadoConnection
+        :type connection: pika.AsyncioConnection
         :param Exception error: The exception indicating failure
 
         """
@@ -489,7 +489,7 @@ class Client:
         closed unexpectedly. Since it is unexpected, we will reconnect to
         RabbitMQ if it disconnects.
 
-        :param pika.TornadoConnection connection: Closed connection
+        :param pika.AsyncioConnection connection: Closed connection
         :param int reply_code: The server provided reply_code if given
         :param str reply_text: The server provided reply_text if given
 
