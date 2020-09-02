@@ -98,7 +98,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
     def install(self, **kwargs):
         with mock.patch('sprockets.mixins.amqp.Client.connect') as conn:
             conn.return_value = self.connection
-            result = amqp.install(self._app, io_loop=self.io_loop, **kwargs)
+            result = amqp.install(self._app, **kwargs)
             conn.assert_called_once()
             self.client = self._app.amqp
             self.client.connection = self.connection

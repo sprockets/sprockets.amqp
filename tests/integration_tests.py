@@ -40,7 +40,7 @@ class AsyncHTTPTestCase(testing.AsyncHTTPTestCase):
         self.queue = str(uuid.uuid4())
         self.routing_key = str(uuid.uuid4())
         self.ready = locks.Event()
-        amqp.install(self._app, self.io_loop, **{
+        amqp.install(self._app, **{
             'on_ready_callback': self.on_amqp_ready,
             'enable_confirmations': self.CONFIRMATIONS,
             'on_return_callback': self.on_message_returned,

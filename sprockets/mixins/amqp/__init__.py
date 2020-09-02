@@ -15,6 +15,7 @@ The ``AMQP``` prefix is interchangeable with ``RABBITMQ``. For example, you can
 use ``AMQP_URL`` or ``RABBITMQ_URL``.
 
 """
+import asyncio
 import logging
 import os
 import sys
@@ -24,12 +25,11 @@ import uuid
 try:
     import pika
     from pika import exceptions
-    from pika.adapters import tornado_connection
-    from tornado import concurrent, ioloop
+    from pika.adapters import asyncio_connection
 except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
-    concurrent, ioloop, exceptions, pika, tornado_connection = \
-        object(), object(), object(), object(), object()
+    exceptions, pika, asyncio_connection = \
+        object(), object(), object()
 
 __version__ = '3.0.1'
 
@@ -39,21 +39,18 @@ DEFAULT_RECONNECT_DELAY = 5
 DEFAULT_CONNECTION_ATTEMPTS = 3
 
 
-def install(application, io_loop=None, **kwargs):
+def install(application, **kwargs):
     """Call this to install AMQP for the Tornado application. Additional
     keyword arguments are passed through to the constructor of the AMQP
     object.
 
     :param tornado.web.Application application: The tornado application
-    :param tornado.ioloop.IOLoop io_loop: The current IOLoop.
     :rtype: bool
 
     """
     if getattr(application, 'amqp', None) is not None:
         LOGGER.warning('AMQP is already installed')
         return False
-
-    kwargs.setdefault('io_loop', io_loop)
 
     # Support AMQP_* and RABBITMQ_* variables
     for prefix in {'AMQP', 'RABBITMQ'}:
@@ -112,7 +109,7 @@ class PublishingMixin:
         :param str routing_key: The routing key to publish the message with
         :param bytes body: The message body to send
         :param dict properties: An optional dict of AMQP properties
-        :rtype: tornado.concurrent.Future
+        :rtype: asyncio.Future
 
         :raises: :exc:`sprockets.mixins.amqp.AMQPError`
         :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
@@ -161,8 +158,7 @@ class Client:
                  default_app_id=None,
                  on_ready_callback=None,
                  on_unavailable_callback=None,
-                 on_return_callback=None,
-                 io_loop=None):
+                 on_return_callback=None):
         """Create a new instance of the consumer class, passing in the AMQP
         URL used to connect to RabbitMQ.
 
@@ -179,8 +175,6 @@ class Client:
             when the connection to the AMQP server becomes unavailable.
         :param callable on_return_callback: The optional callback
             that is invoked if a message is  returned because it is unroutable
-        :param tornado.ioloop.IOLoop io_loop: An optional IOLoop to override
-            the default with.
         :raises: ValueError
 
         """
@@ -194,7 +188,6 @@ class Client:
                 'Invalid reconnect_delay value: {}'.format(reconnect_delay))
 
         self.state = self.STATE_IDLE
-        self.io_loop = io_loop or ioloop.IOLoop.current()
         self.channel = None
         self.connection = None
         self.connection_attempts = int(connection_attempts)
@@ -222,12 +215,12 @@ class Client:
         :param bytes body: The message body to send.
         :param dict properties: An optional dict of additional properties
                                 to append.
-        :rtype: tornado.concurrent.Future
+        :rtype: asyncio.Future
         :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
         :raises: :exc:`sprockets.mixins.amqp.PublishingError`
 
         """
-        future = concurrent.Future()
+        future = asyncio.Future()
 
         properties = properties or {}
         properties.setdefault('app_id', self.default_app_id)
@@ -373,19 +366,18 @@ class Client:
         When the connection is established, the on_connection_open method
         will be invoked by pika.
 
-        :rtype: pika.TornadoConnection
+        :rtype: pika.AsyncioConnection
 
         """
         if not self.idle and not self.closed:
             raise ConnectionStateError(self.state_description)
         LOGGER.debug('Connecting to %s', self.url)
         self.state = self.STATE_CONNECTING
-        self.connection = tornado_connection.TornadoConnection(
+        self.connection = asyncio_connection.AsyncioConnection(
             parameters=self.parameters,
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,
-            on_close_callback=self.on_connection_closed,
-            custom_ioloop=self.io_loop)
+            on_close_callback=self.on_connection_closed)
 
     def close(self):
         """Cleanly shutdown the connection to RabbitMQ
@@ -420,7 +412,8 @@ class Client:
         if self.idle or self.closed:
             LOGGER.debug('Attempting RabbitMQ reconnect in %s seconds',
                          self.reconnect_delay)
-            self.io_loop.call_later(self.reconnect_delay, self.connect)
+            asyncio.get_event_loop().call_later(
+                self.reconnect_delay, self.connect)
             return
         LOGGER.warning('Reconnect called while %s', self.state_description)
 
@@ -432,7 +425,7 @@ class Client:
         """This method is called by pika once the connection to RabbitMQ has
         been established.
 
-        :type connection: pika.TornadoConnection
+        :type connection: pika.AsyncioConnection
 
         """
         LOGGER.debug('Connection opened')
@@ -446,7 +439,7 @@ class Client:
     def on_connection_open_error(self, connection, error):
         """Invoked if the connection to RabbitMQ can not be made.
 
-        :type connection: pika.TornadoConnection
+        :type connection: pika.AsyncioConnection
         :param Exception error: The exception indicating failure
 
         """
@@ -495,7 +488,7 @@ class Client:
         closed unexpectedly. Since it is unexpected, we will reconnect to
         RabbitMQ if it disconnects.
 
-        :param pika.TornadoConnection connection: Closed connection
+        :param pika.AsyncioConnection connection: Closed connection
         :param int reply_code: The server provided reply_code if given
         :param str reply_text: The server provided reply_text if given
 
