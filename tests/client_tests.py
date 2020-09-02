@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from unittest import mock
 
@@ -219,8 +220,8 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
     def test_reconnect(self):
         self.client.state = amqp.Client.STATE_IDLE
         self.assertTrue(self.client.idle)
-        with mock.patch.object(
-                self.client.io_loop, 'call_later') as call_later:
+        loop = asyncio.get_event_loop()
+        with mock.patch.object(loop, 'call_later') as call_later:
             self.client._reconnect()
             call_later.assert_called_once_with(self.client.reconnect_delay,
                                                self.client.connect)
@@ -228,8 +229,8 @@ class ClientStateTransitionsTestCase(base.AsyncHTTPTestCase):
     def test_reconnect_when_closing(self):
         self.client.state = amqp.Client.STATE_CLOSING
         self.assertTrue(self.client.closing)
-        with mock.patch.object(
-                self.client.io_loop, 'call_later') as call_later:
+        loop = asyncio.get_event_loop()
+        with mock.patch.object(loop, 'call_later') as call_later:
             self.client._reconnect()
             call_later.assert_not_called()
 

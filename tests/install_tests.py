@@ -50,9 +50,6 @@ class InstallKWArgsTestCase(base.AsyncHTTPTestCase):
         self.assertEqual(self.client.default_app_id,
                          'test/{}'.format(amqp.__version__))
 
-    def test_io_loop(self):
-        self.assertEqual(self.client.io_loop, self.io_loop)
-
 
 class InstallEnvironTestCase(base.AsyncHTTPTestCase):
 
