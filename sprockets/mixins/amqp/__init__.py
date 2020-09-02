@@ -26,11 +26,10 @@ try:
     import pika
     from pika import exceptions
     from pika.adapters import asyncio_connection
-    from tornado import concurrent
 except ImportError:  # pragma: nocover
     sys.stderr.write('setup.py import error compatibility objects created\n')
-    concurrent, exceptions, pika, asyncio_connection = \
-        object(), object(), object(), object(), object()
+    exceptions, pika, asyncio_connection = \
+        object(), object(), object()
 
 __version__ = '3.0.1'
 
@@ -110,7 +109,7 @@ class PublishingMixin:
         :param str routing_key: The routing key to publish the message with
         :param bytes body: The message body to send
         :param dict properties: An optional dict of AMQP properties
-        :rtype: tornado.concurrent.Future
+        :rtype: asyncio.Future
 
         :raises: :exc:`sprockets.mixins.amqp.AMQPError`
         :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
@@ -216,12 +215,12 @@ class Client:
         :param bytes body: The message body to send.
         :param dict properties: An optional dict of additional properties
                                 to append.
-        :rtype: tornado.concurrent.Future
+        :rtype: asyncio.Future
         :raises: :exc:`sprockets.mixins.amqp.NotReadyError`
         :raises: :exc:`sprockets.mixins.amqp.PublishingError`
 
         """
-        future = concurrent.Future()
+        future = asyncio.Future()
 
         properties = properties or {}
         properties.setdefault('app_id', self.default_app_id)

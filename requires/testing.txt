@@ -7,4 +7,5 @@ flake8-print
 flake8-quotes
 flake8-rst-docstrings
 flake8-tuple
+tornado>=6,<7
 -r installation.txt
